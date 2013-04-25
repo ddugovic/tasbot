@@ -1,0 +1,23 @@
+cc-lib                             Tom 7       8 Jul 2012
+
+Like my much more impressive "sml-lib", this is my attempt to get
+all of my frequently used C++ libraries into a single place so that
+different copies don't accumulate different changes.
+
+I try to use portable style where possible to make compiling against
+this easy. I hate complicated makefiles, actually basically all build
+systems, library dependencies, autoconf, and that stuff. But ultimately
+it's kind of complicated, you know?
+
+
+A lot of what's here is google "base" libraries, since those are quite
+useful and I know them well. They have been released multiple times
+underopen-source licenses; particularly the Apache 2.0 license, which
+is in APACHE20.
+
+Currently, everything else is licensed under the GPL, which can be
+found in COPYING.
+
+base/        Google "base" library. APACHE20 license.
+strings/     Google "strings" library. APACHE20 license.
+

@@ -1,0 +1,3 @@
+This is Google's open source cityhash. I tried to make it a single-file 
+compile by removing the dependency on config.h. Any modifications 
+distributed under the same MIT License (see COPYING).

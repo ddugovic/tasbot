@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples
+END
+jdksmidi_rewrite_midifile.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/jdksmidi_rewrite_midifile.cpp
+END
+rewrite_midifile.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/rewrite_midifile.cpp
+END
+create_midifile.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/create_midifile.cpp
+END
+jdksmidi_test_parse.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/jdksmidi_test_parse.cpp
+END
+jdksmidi_test_sequencer.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/jdksmidi_test_sequencer.cpp
+END
+vrm_music_gen_readme.txt
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/vrm_music_gen_readme.txt
+END
+jdksmidi_test_drv.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/jdksmidi_test_drv.cpp
+END
+jdksmidi_test_multitrack.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/jdksmidi_test_multitrack.cpp
+END
+jdksmidi_test_multitrack1.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/jdksmidi_test_multitrack1.cpp
+END
+jdksmidi_test_show.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/jdksmidi_test_show.cpp
+END
+vrm_music_gen.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svnroot/tom7misc/!svn/ver/1734/trunk/cc-lib/jdksmidi/examples/vrm_music_gen.cpp
+END
