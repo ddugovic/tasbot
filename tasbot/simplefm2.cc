@@ -21,8 +21,8 @@ vector<uint8> SimpleFM2::ReadInputs(const string &filename) {
     }
     
     if (!(line[1] == '0' ||
-	  (line[1] == '2' && out.empty()))) {
-      fprintf(stderr, "Command must be zero except hard "
+	  ((line[1] == '1' || line[1] == '2') && out.empty()))) {
+      fprintf(stderr, "Command must be zero except "
 	      "reset in first input: [%s]\n", line.c_str());
       abort();
     }
