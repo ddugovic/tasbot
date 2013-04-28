@@ -39,9 +39,23 @@
 #define FASTFORWARD 0
 */
 
+/*
 #define GAME "contra"
 #define MOVIE "contra-tom.fm2"
 #define BASE64 "base64:WlwvTxyvsfVajcDVrUVQ5Q=="
+#define FASTFORWARD 0
+*/
+
+/*
+#define GAME "megaman2"
+#define MOVIE "megaman2-tom.fm2"
+#define BASE64 "base64:BSeg7lEvaeCLjbbcl5ZGMg="
+#define FASTFORWARD 0
+*/
+
+#define GAME "gradius"
+#define MOVIE "gradius-tom.fm2"
+#define BASE64 "base64:ScD/vW/KaS58VntNcq4IRw=="
 #define FASTFORWARD 0
 
 // #define GAME "pacman"

@@ -42,3 +42,63 @@
  playfun  - plays the game given the output of learnfun. More or less
             works for "easy" games like Super Mario Bros.
 
+
+ Learnfun and Playfun work well enough to play "easy" games without
+ any customization. The steps are:
+
+ - Use FCEUX to record a movie (FM2 format) of you playing the game.
+   I usually do a few thousand frames and I try to keep it simple.
+
+ - Optionally, modify the beginning of the movie to have only a single
+   frame of the "START" button. You don't need to do this, but since
+   the learning (and playing) process begins with the first button
+   press, it may be cleaner training data if it never sees you press
+   START after that, including on the next frame. In most games,
+   having START among the input motifs is an annoyance, because
+   Playfun will pause the game sometimes. (This does sometimes allow
+   it to play better because it can wait when all its futures are
+   bad.) If it's pausing a lot, it probably has no idea what it's
+   doing, anyway. You might consider editing the training data to
+   be cheating. Up to you.
+
+ - Modify game.h to set the name of your movie. You can also define
+   FASTFORWARD to skip any number of frames (copying them from your
+   movie), like if you want to skip menus. This is obviously cheating.
+   The BASE64 doesn't really matter, but it makes the FM2 files that
+   playfun generates be valid, which avoids warnings in the emulator
+   later.
+
+ - Rebuild learnfun and playfun (see HACKING). They compile in the
+   constants in game.h.
+
+ - Run ./learnfun to produce an .objectives and .motifs file
+   based on your inputs. It also makes some SVGs that are optional.
+
+ - I recommend running Playfun in MARIONET mode. I don't even think
+   single-cpu mode really works any more and it's very slow (you would
+   at least need to turn down the constants like NFUTURES). This means
+   first starting a helper for each logical CPU (this is probably 2x
+   the number of cores, since you probably have a hyperthreaded CPU),
+   then a single master:
+
+   ./playfun --helper 8000
+   ./playfun --helper 8001
+   ./playfun --helper 8002
+   ./playfun --helper 8003
+   ./playfun --helper 8004
+   ./playfun --helper 8005
+   ./playfun --master 8000 8001 8002 8003 8004 8005
+
+   These of course need to keep running, so you should do them in
+   different console windows. They output ANSI colors and escape
+   sequences to draw progress bars. The program "ansicon" works
+   for me in Windows 7 to render ANSI control codes. I usually
+   run ansicon, then from the command prompt run cygwin's bash,
+   then playfun. One window per playfun.
+
+ - Playfun will run forever. Every once in a while it writes
+   an .fm2 file (*-playfun-futures-progress.fm2) which you can
+   view in FCEUX to see what it's doing! Note that playfun is
+   very slow; on a 6-core Intel Extreme whatever, I often run it
+   for many days to produce a few minutes of gameplay.
+
