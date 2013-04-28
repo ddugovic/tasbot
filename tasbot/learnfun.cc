@@ -44,10 +44,11 @@ static void SaveMemory(vector< vector<uint8> > *memories) {
 
 static vector< vector<int> > *objectives = NULL;
 static void PrintAndSave(const vector<int> &ordering) {
+  printf("%d=[ ", objectives->size());
   for (int i = 0; i < ordering.size(); i++) {
     printf("%d ", ordering[i]);
   }
-  printf("\n");
+  printf("]\n");
   CHECK(objectives);
   objectives->push_back(ordering);
 }
