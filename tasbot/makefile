@@ -14,21 +14,21 @@ PROTOC=protoc
 PROTO_HEADERS=marionet.pb.h
 PROTO_OBJECTS=marionet.pb.o
 
-## If you don't have SDL, you can leave these out, and maybe it still works.
-CCNETWORKING= -DMARIONET=1 -I /usr/include/SDL
+# If you don't have SDL, you can leave these out, and maybe it still works.
+CCNETWORKING= -DMARIONET -I /usr/include/SDL
+#CCNETWORKING= -I /usr/include/SDL
 LINKSDL=  -lSDL -lSDL_net
 LINKNETWORKING= $(LINKSDL) -lprotobuf -lpthread
 
-# PROFILE=-pg
+#PROFILE=-pg -g
 PROFILE=
 
 # compile and link time optimization
 # -flto is not compatible with -fwhole-program
-#OPT=-O -g
-OPT=-O2
 #OPT=-O2 -flto
+OPT=-O2
 #LOPT=-flto
-LOPT=-fwhole-program
+LOPT=-O2 -fwhole-program
 
 INCLUDES=-I "../cc-lib" -I "../cc-lib/city"
 #DEFINES=-DPSS_STYLE=1 -DDUMMY_UI -DHAVE_ALLOCA -DHAVE_ASPRINTF -DNOWINSTUFF -DNOUNZIP
@@ -37,8 +37,8 @@ DEFINES=-DPSS_STYLE=1 -DDUMMY_UI -DHAVE_ALLOCA -DHAVE_ASPRINTF -DNOWINSTUFF
 CPPFLAGS= $(CCNETWORKING) $(DEFINES) -Wno-write-strings -m64 $(INCLUDES) $(PROFILE) $(OPT)
 #CPPFLAGS= $(DEFINES) -Wno-write-strings -m64 $(INCLUDES) $(PROFILE) $(OPT)
 
-#LFLAGS=$(LINKNETWORKING) -lz $(LOPT) -Wl,--subsystem,console
-LFLAGS=$(LINKNETWORKING) -lz $(LOPT)
+#LFLAGS=$(LINKNETWORKING) -lz $(PROFILE) $(LOPT) -Wl,--subsystem,console
+LFLAGS=$(LINKNETWORKING) -lz $(PROFILE) $(LOPT)
 
 CCLIBOBJECTS=../cc-lib/util.o ../cc-lib/arcfour.o ../cc-lib/base/stringprintf.o ../cc-lib/city/city.o ../cc-lib/textsvg.o
 
@@ -60,6 +60,7 @@ UTILSOBJECTS=fceu/utils/ConvertUTF.o fceu/utils/general.o fceu/utils/memory.o fc
 EMUOBJECTS=$(FCEUOBJECTS) $(MAPPEROBJECTS) $(UTILSOBJECTS) $(PALLETESOBJECTS) $(BOARDSOBJECTS) $(INPUTOBJECTS) $(DRIVERS_COMMON_OBJECTS)
 
 TASBOT_OBJECTS=headless-driver.o config.o simplefm2.o emulator.o basis-util.o objective.o weighted-objectives.o motifs.o netutil.o util.o
+#TASBOT_OBJECTS=headless-driver.o config.o simplefm2.o emulator.o basis-util.o objective.o weighted-objectives.o motifs.o util.o
 
 #included in all tests, etc.
 OBJECTS=$(CCLIBOBJECTS) $(EMUOBJECTS) $(PROTO_HEADERS) $(PROTO_OBJECTS) $(TASBOT_OBJECTS)

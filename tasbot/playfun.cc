@@ -38,7 +38,7 @@
 #include "../cc-lib/textsvg.h"
 #include "game.h"
 
-#if MARIONET
+#ifdef MARIONET
 #include "SDL.h"
 #include "SDL_net.h"
 #include "marionet.pb.h"
@@ -304,7 +304,7 @@ struct PlayFun {
     *negative_scores = -objectives->WeightedLess(future_memory, base_memory);
   }
 
-  #if MARIONET
+  #ifdef MARIONET
   static void ReadBytesFromProto(const string &pf, vector<uint8> *bytes) {
     // PERF iterators.
     for (int i = 0; i < pf.size(); i++) {
@@ -658,6 +658,7 @@ struct PlayFun {
     }
     v->swap(vnew);
   }
+  #endif
 
   static void Dualize(vector<uint8> *v, int start, int len) {
     CHECK(start >= 0);
@@ -833,8 +834,6 @@ struct PlayFun {
     }
     return inputs;
   }
-  #endif
-
 
   void InnerLoop(const vector<uint8> &next,
 		 const vector<Future> &futures_orig,
@@ -963,7 +962,7 @@ struct PlayFun {
     double best_score = 0.0;
     Scoredist distribution(movie.size());
 
-#if MARIONET
+#ifdef MARIONET
     // One piece of work per request.
     vector<HelperRequest> requests;
     requests.resize(nexts.size());
@@ -1795,7 +1794,7 @@ const int PlayFun::MINFUTURELENGTH;
  * The main loop for the SDL.
  */
 int main(int argc, char *argv[]) {
-  #if MARIONET
+  #ifdef MARIONET
   fprintf(stderr, "Init SDL\n");
 
   /* Initialize SDL and network, if we're using it. */
@@ -1806,7 +1805,7 @@ int main(int argc, char *argv[]) {
 
   PlayFun pf;
 
-  #if MARIONET
+  #ifdef MARIONET
   if (argc >= 2) {
     if (0 == strcmp(argv[1], "--helper")) {
       if (argc < 3) {
@@ -1845,7 +1844,7 @@ int main(int argc, char *argv[]) {
   // exit the infrastructure
   FCEUI_Kill();
 
-  #if MARIONET
+  #ifdef MARIONET
   SDLNet_Quit();
   SDL_Quit();
   #endif
