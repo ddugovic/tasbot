@@ -128,8 +128,9 @@ static bool LessObjective(const vector<uint8> &mem1,
 static int Order(const vector<uint8> &mem1, 
 		 const vector<uint8> &mem2,
 		 const vector<int> &order) {
-  for (int i = 0; i < order.size(); i++) {
-    int p = order[i];
+  for (vector<int>::const_iterator it = order.begin();
+       it != order.end(); ++it) {
+    int p = *it;
     if (mem1[p] > mem2[p])
       return -1;
     if (mem1[p] < mem2[p])
