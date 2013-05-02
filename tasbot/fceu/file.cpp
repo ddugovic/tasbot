@@ -468,7 +468,7 @@ void FCEUI_SetDirOverride(int which, char *n)
 	}
 }
 
-	#ifndef HAVE_ASPRINTF
+	#ifndef __USE_GNU
 	static int asprintf(char **strp, const char *fmt, ...)
 	{
 		va_list ap;

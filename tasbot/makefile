@@ -5,7 +5,8 @@ default: playfun learnfun showfun
 
 all: playfun tasbot emu_test objective_test learnfun weighted-objectives_test showfun
 
-CXXFLAGS=-Wall -Wno-deprecated -Wno-sign-compare -I/usr/local/include -fno-strict-aliasing
+#CXXFLAGS=-Wall -Wno-deprecated -Wno-sign-compare -Wno-write-strings -I/usr/local/include -fno-strict-aliasing
+CXXFLAGS=-Wall -Wno-deprecated -Wno-sign-compare -I/usr/local/include
 CXX=g++
 CC=g++
 SDLARCH=x64
@@ -21,21 +22,24 @@ LINKSDL=  -lSDL -lSDL_net
 LINKNETWORKING= $(LINKSDL) -lprotobuf -lpthread
 
 #PROFILE=-pg -g
+#PROFILE=-g
 PROFILE=
 
 # compile and link time optimization
 # -flto is not compatible with -fwhole-program
-#OPT=-O2 -flto
+#OPT=-O0
 OPT=-O2
+#OPT=-O2 -flto
+#LOPT=
+LOPT=-fwhole-program
 #LOPT=-flto
-LOPT=-O2 -fwhole-program
 
 INCLUDES=-I "../cc-lib" -I "../cc-lib/city"
-#DEFINES=-DPSS_STYLE=1 -DDUMMY_UI -DHAVE_ALLOCA -DHAVE_ASPRINTF -DNOWINSTUFF -DNOUNZIP
-DEFINES=-DPSS_STYLE=1 -DDUMMY_UI -DHAVE_ALLOCA -DHAVE_ASPRINTF -DNOWINSTUFF
+#DEFINES=-DPSS_STYLE=1 -DDUMMY_UI -DHAVE_ALLOCA -DNOWINSTUFF -DNOUNZIP
+DEFINES=-DPSS_STYLE=1 -DDUMMY_UI
 
-CPPFLAGS= $(CCNETWORKING) $(DEFINES) -Wno-write-strings -m64 $(INCLUDES) $(PROFILE) $(OPT)
-#CPPFLAGS= $(DEFINES) -Wno-write-strings -m64 $(INCLUDES) $(PROFILE) $(OPT)
+CPPFLAGS= $(CCNETWORKING) $(DEFINES) -m64 $(INCLUDES) $(PROFILE) $(OPT)
+#CPPFLAGS= $(DEFINES) -m64 $(INCLUDES) $(PROFILE) $(OPT)
 
 #LFLAGS=$(LINKNETWORKING) -lz $(PROFILE) $(LOPT) -Wl,--subsystem,console
 LFLAGS=$(LINKNETWORKING) -lz $(PROFILE) $(LOPT)
