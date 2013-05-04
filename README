@@ -1,31 +1,30 @@
- TASBOT                                     Tom 7         10 Apr 2013
+ TASBOT                                                   4 May 2013
 
  Experimental code for automating the play of NES games.
  This directory contains some false starts and the playfun and learnfun
- algorithms, which are described here
+ algorithms, which original author Tom Murphy VII describes here
 
    http://tom7.org/mario/
 
- The intended platform is 64-bit windows 7. There's no windows-specific
- stuff here, but compiling in this era is a nightmare and so I don't
- expect it to work straightforwardly on other platforms. See HACKING
- for my notes on compiling. (For what it's worth, compiling on linux
- should be less painful but I've done none of the work there.)
+ The intended platform is 64-bit GNU/Linux, although mingw-specific
+ code is left intact so compiling on Windows should only require
+ obtaining dependencies and editing the makefile. Compiling with SDL
+ is known to work with the following packages:
+ SDL-devel 1.2.10-9 or better
+ SDL_net-devel 1.2.7-1 or better
 
- The fceu subdirectory is the fork of FCEUX. I deleted a bunch of
+ Compiling with protobuf is known to work with the following package:
+ protobuf-devel 2.3.0-7 or better
+
+ The fceu subdirectory is the fork of FCEUX. Tom deleted a bunch of
  stuff from it, and made it compile cleanly under 64-bit mingw for
- x64. It is licensed under the GPL (see fceu/COPYING), including my
+ x64. It is licensed under the GPL (see fceu/COPYING), including his
  modifications.
 
  Despite depending on SDL (for networking) this is currently a
- headless compile; no graphics or sound or input. It compiles for me
- with the makefile I built, after installing the cygwin packages like
- x86_64-w64-mingw32-g++ (don't get the i686 ones; I hear they are a
- trap!). Make sure you get libz since it's required by this. Follow
- the instructions on http://mingw-w64.sourceforge.net/ to make sure
- that it's running the right binary (this is all so very confusing),
- but I installed via cygwin and that worked and so that was +1 for
- cygwin.
+ headless compile; no graphics or sound or input. It is possible to
+ edit the makefile to compile without SDL and networking. See Tom's
+ original project (at the link above) for Windows compile details.
 
 
  For most of these programs you need to make modifications to the
@@ -48,6 +47,9 @@
 
  - Use FCEUX to record a movie (FM2 format) of you playing the game.
    I usually do a few thousand frames and I try to keep it simple.
+   See here for an example
+
+   http://youtu.be/OS75JLwJExk
 
  - Optionally, modify the beginning of the movie to have only a single
    frame of the "START" button. You don't need to do this, but since
@@ -68,18 +70,17 @@
    playfun generates be valid, which avoids warnings in the emulator
    later.
 
- - Rebuild learnfun and playfun (see HACKING). They compile in the
-   constants in game.h.
+ - Rebuild learnfun and playfun.
+   They compile in the constants in game.h.
 
  - Run ./learnfun to produce an .objectives and .motifs file
-   based on your inputs. It also makes some SVGs that are optional.
+   based on your inputs. It also makes some optional SVG files.
 
- - I recommend running Playfun in MARIONET mode. I don't even think
-   single-cpu mode really works any more and it's very slow (you would
-   at least need to turn down the constants like NFUTURES). This means
-   first starting a helper for each logical CPU (this is probably 2x
-   the number of cores, since you probably have a hyperthreaded CPU),
-   then a single master:
+ - I recommend running Playfun in MARIONET (client/server) mode since
+   single-CPU mode is very slow (you would need to reduce constants
+   like NFUTURES). This means first starting a helper for each logical
+   CPU (this is probably 2x the number of cores, since you probably have
+   hyperthreaded CPUs), then starting a single master:
 
    ./playfun --helper 8000
    ./playfun --helper 8001
@@ -89,12 +90,10 @@
    ./playfun --helper 8005
    ./playfun --master 8000 8001 8002 8003 8004 8005
 
-   These of course need to keep running, so you should do them in
-   different console windows. They output ANSI colors and escape
-   sequences to draw progress bars. The program "ansicon" works
-   for me in Windows 7 to render ANSI control codes. I usually
-   run ansicon, then from the command prompt run cygwin's bash,
-   then playfun. One window per playfun.
+   These all output ANSI colors and escape sequences to draw progress
+   bars, so you will want to run them in different console windows.
+   Note that MARIONET is vulnerable to remote exploitation (it loads
+   savestates, assuming they're valid). Don't run it on open networks.
 
  - Playfun will run forever. Every once in a while it writes
    an .fm2 file (*-playfun-futures-progress.fm2) which you can
@@ -102,3 +101,6 @@
    very slow; on a 6-core Intel Extreme whatever, I often run it
    for many days to produce a few minutes of gameplay.
 
+ - Read TODO for ideas on how to improve this program. To date I've
+   mainly focused on refactors to accomodate future changes and to
+   improve performance.

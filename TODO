@@ -1,10 +1,23 @@
 Things to do or try:
 
+Consider making a simple markov model of inputs rather than fixed motifs.
+
+Instead of motifs of fixed length, try sequences of random varying length.
+
+We should consider explicitly taking into account the tree of inputs,
+since caching makes some kinds of exploration much cheaper than others.
+
 Don't bother trying every next. Pick the best half, and some random
 subset of the rest. Use the time instead to explore more futures.
 
+When futures are bad in general, shorten them and have more of them.
+When they are good, lengthen them and have fewer.
+
 At search time, weight changes in objective functions by the magnitude
 of the change, not just the number that went up or down.
+
+Can use number of successful (better) backtracks as a way of gauging how
+globally good my state is.
 
 Search by an iterated random process, where we look at all the first
 steps, some of the second, fewer of the third, etc.
@@ -14,25 +27,10 @@ Integrate over the values of intermediate steps when evaluating a plan.
 If we are stuck issuing a very low value move, jump back in time and
 randomize.
 
-Instead of motifs of fixed length, try sequences of random varying length.
-
-Consider making a simple markov model of inputs rather than fixed motifs.
-
 Allow lex ordering to include -byte in addition to +byte, for things
 that decrease.
 
 Allow lex orderings that treat their bytes as signed?
-
-We should consider explicitly taking into account the tree of inputs,
-since caching makes some kinds of exploration much cheaper than others.
-
-
-when futures are bad in general, shorten them and have more of them.
-When they are good, lengthen them and have fewer.
-
-
-can use number of successful (better) backtracks as a way of gauging how
-globally good my state is.
 
 
 games:
