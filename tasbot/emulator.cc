@@ -23,9 +23,6 @@ using tr1::unordered_map;
 #include "tasbot.h"
 #include "../cc-lib/city/city.h"
 
-// XXX move to header, enable _debug mode.
-#define DCHECK(x) do {} while(0)
-
 // Joystick data. I think used for both controller 0 and 1. Part of
 // the "API".
 static uint32 joydata = 0;
@@ -80,21 +77,22 @@ struct StateCache {
     slop = ss;
     CHECK(limit >= 0);
     CHECK(slop >= 0);
-    next_sequence = count = 0ULL;
+    hits = misses = next_sequence = count = 0ULL;
     printf("OK.\n");
   }
 
+  // Even if Remember() doesn't leak it consumes gigabytes of memory.
   // Assumes it's not present. If it is, then you'll leak.
   void Remember(uint8 input, const vector<uint8> &start,
 		const vector<uint8> &result) {
-    vector<uint8> *startcopy = new vector<uint8>(start),
-                  *resultcopy = new vector<uint8>(result);
+    vector<uint8> *startcopy = new vector<uint8>(start);
+    vector<uint8> *resultcopy = new vector<uint8>(result);
     pair<Hash::iterator, bool> it =
       hashtable.insert(make_pair(make_pair(input, startcopy), 
 				 make_pair(next_sequence++, resultcopy)));
     CHECK(it.second);
-    DCHECK(NULL != GetKnownResult(input, *startcopy));
-    DCHECK(NULL != GetKnownResult(input, start));
+    CHECK(NULL != GetKnownResult(input, *startcopy));
+    CHECK(NULL != GetKnownResult(input, start));
     count++;
     MaybeResize();
   }
@@ -117,7 +115,7 @@ struct StateCache {
     // Don't always do this, since it is linear time.
     if (count > limit + slop) {
       const int num_to_remove = count - limit;
-      // printf("Resizing (currently %d) to remove %d\n", count, num_to_remove);
+      printf("Resizing (currently %d) to remove %d\n", count, num_to_remove);
 
       // PERF: This can be done much more efficiently using a flat
       // heap.
@@ -134,7 +132,7 @@ struct StateCache {
       CHECK(num_to_remove < all_sequences.size());
       const uint64 minseq = all_sequences[num_to_remove];
 
-      // printf("Removing everything below %d\n", minseq);
+      printf("Removing everything below %d\n", minseq);
 
       for (Hash::iterator it = hashtable.begin(); it != hashtable.end(); 
 	   /* in loop */) {
@@ -151,7 +149,7 @@ struct StateCache {
 	  ++it;
 	}
       }
-      // printf("Size is now %d (internally %d)\n", count, hashtable.size());
+      printf("Size is now %d (internally %d)\n", count, hashtable.size());
     }
   }
 
@@ -395,6 +393,10 @@ void Emulator::Load(vector<uint8> *state) {
 
 #if USE_COMPRESSION
 
+// Save and load with a basis vector. The vector can contain anything, and
+// doesn't even have to be the same length as an uncompressed save state,
+// but a state needs to be loaded with the same basis as it was saved.
+// basis can be NULL, and then these behave the same as Save/Load.
 void Emulator::SaveEx(vector<uint8> *state, const vector<uint8> *basis) {
   // TODO
   // Saving is not as efficient as we'd like for a pure in-memory operation
@@ -434,6 +436,10 @@ void Emulator::SaveEx(vector<uint8> *state, const vector<uint8> *basis) {
   state->resize(4 + comprlen);
 }
 
+// Save and load with a basis vector. The vector can contain anything, and
+// doesn't even have to be the same length as an uncompressed save state,
+// but a state needs to be loaded with the same basis as it was saved.
+// basis can be NULL, and then these behave the same as Save/Load.
 void Emulator::LoadEx(vector<uint8> *state, const vector<uint8> *basis) {
   // Decompress. First word tells us the decompressed size.
   int uncomprlen = *(uint32*)&(*state)[0];
@@ -478,7 +484,7 @@ void Emulator::LoadEx(vector<uint8> *state, const vector<uint8> *basis) {
 // When compression is disabled, we ignore the basis (no point) and
 // don't store any size header. These functions become very simple.
 void Emulator::SaveEx(vector<uint8> *state, const vector<uint8> *basis) {
-  FCEUSS_SaveRAW(out);
+  FCEUSS_SaveRAW(state);
 }
 
 void Emulator::LoadEx(vector<uint8> *state, const vector<uint8> *basis) {
@@ -492,28 +498,40 @@ void Emulator::LoadEx(vector<uint8> *state, const vector<uint8> *basis) {
 #endif
 
 // Cache stuff.
+// Consumes gigabytes of memory with uncompressed data.  It seems as if
+// state (or "start" and "result") data could be compressed except during
+// Step(), and algorithm wouldn't be affected.
 
 // static
 void Emulator::ResetCache(uint64 numstates, uint64 slop) {
+#ifndef NOEMUCACHE
   CHECK(cache != NULL);
   cache->Resize(numstates, slop);
+#endif
 }
 
 // static
 void Emulator::CachingStep(uint8 input) {
+#ifndef NOEMUCACHE
   vector<uint8> start;
-  SaveUncompressed(&start);
+  Save(&start);
   if (vector<uint8> *cached = cache->GetKnownResult(input, start)) {
-    LoadUncompressed(cached);
+    Load(cached);
   } else {
+#endif
     Step(input);
+#ifndef NOEMUCACHE
     vector<uint8> result;
-    SaveUncompressed(&result);
+    Save(&result);
     cache->Remember(input, start, result);
 
     // PERF
     CHECK(NULL != cache->GetKnownResult(input, start));
   }
+  if ((cache->hits + cache->misses) % 10000 == 0) {
+    PrintCacheStats();
+  }
+#endif
 }
 
 void Emulator::PrintCacheStats() {

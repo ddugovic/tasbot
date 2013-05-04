@@ -260,7 +260,7 @@ struct PlayFun {
     subtitles.push_back(message);
     if (movie.size() % CHECKPOINT_EVERY == 0) {
       vector<uint8> savestate;
-      Emulator::SaveUncompressed(&savestate);
+      Emulator::Save(&savestate);
       checkpoints.push_back(Checkpoint(savestate, movie.size()));
     }
 
@@ -437,10 +437,10 @@ struct PlayFun {
 
     // Get the memories so that we can score.
     vector<uint8> start_memory, end_memory;
-    Emulator::LoadUncompressed(&end_state);
+    Emulator::Load(&end_state);
     Emulator::GetMemory(&end_memory);
 
-    Emulator::LoadUncompressed(&start_state);
+    Emulator::Load(&start_state);
     Emulator::GetMemory(&start_memory);
 
     InPlaceTerminal term(1);
@@ -695,7 +695,7 @@ struct PlayFun {
   double ScoreIntegral(vector<uint8> *start_state,
 		       const vector<uint8> &inputs,
 		       vector<uint8> *final_memory) {
-    Emulator::LoadUncompressed(start_state);
+    Emulator::Load(start_state);
     vector<uint8> previous_memory;
     Emulator::GetMemory(&previous_memory);
     double sum = 0.0;
@@ -774,7 +774,7 @@ struct PlayFun {
 			     const vector<uint8> &inputs,
 			     const vector<uint8> &end_memory,
 			     double *score) {
-    Emulator::LoadUncompressed(start_state);
+    Emulator::Load(start_state);
     for (int i = 0; i < inputs.size(); i++) {
       Emulator::CachingStep(inputs[i]);
     }
@@ -847,7 +847,7 @@ struct PlayFun {
     // Make copy so we can make fake futures.
     vector<Future> futures = futures_orig;
 
-    Emulator::LoadUncompressed(current_state);
+    Emulator::Load(current_state);
 
     vector<uint8> current_memory;
     Emulator::GetMemory(&current_memory);
@@ -860,7 +860,7 @@ struct PlayFun {
     Emulator::GetMemory(&new_memory);
 
     vector<uint8> new_state;
-    Emulator::SaveUncompressed(&new_state);
+    Emulator::Save(&new_state);
 
     // Used to be BuggyEvaluate = WeightedLess? XXX
     *immediate_score = objectives->Evaluate(current_memory, new_memory);
@@ -896,7 +896,7 @@ struct PlayFun {
 
     *futures_score = 0.0;
     for (int f = 0; f < futures.size(); f++) {
-      if (f != 0) Emulator::LoadUncompressed(&new_state);
+      if (f != 0) Emulator::Load(&new_state);
       double positive_scores, negative_scores, integral_score;
       ScoreByFuture(futures[f], new_memory, &new_state,
 		    &positive_scores, &negative_scores,
@@ -1145,7 +1145,7 @@ struct PlayFun {
     }
 
     // Save our current state so we can try many different branches.
-    Emulator::SaveUncompressed(&current_state);
+    Emulator::Save(&current_state);
     Emulator::GetMemory(&current_memory);
 
     // Total score across all motifs for each future.
@@ -1227,7 +1227,7 @@ struct PlayFun {
     // If in single mode, this is probably cached, but with
     // MARIONET this is usually a full replay.
     // fprintf(stderr, "Replay %d moves\n", nexts[best_next_idx].size());
-    Emulator::LoadUncompressed(&current_state);
+    Emulator::Load(&current_state);
     for (int j = 0; j < nexts[best_next_idx].size(); j++) {
       Commit(nexts[best_next_idx][j], nextplanations[best_next_idx]);
     }
@@ -1318,7 +1318,7 @@ struct PlayFun {
     vector<Future> futures;
 
     int rounds_until_backtrack = TRY_BACKTRACK_EVERY;
-    int64 iters = 0;
+    int64 iters = 1;
 
     PopulateFutures(&futures);
     for (;; iters++) {
@@ -1414,6 +1414,7 @@ struct PlayFun {
     fprintf(log, "<li>Trying to improve frames %d&ndash;%d, %f</li>\n",
 	    &start->movenum, movie.size(), current_integral);
 
+    #ifdef MARIONET
     static const int MAXBEST = 10;
 
     // For random, we could compute the right number of
@@ -1433,9 +1434,6 @@ struct PlayFun {
     // opposites_ites = 0 does make sense.
     static const bool TRY_OPPOSITES = true;
     static const int OPPOSITES_ITERS = 200;
-
-
-    #ifdef MARIONET
 
     // One piece of work per request.
     vector<HelperRequest> requests;
@@ -1621,7 +1619,7 @@ struct PlayFun {
       }
 
       vector<uint8> current_state;
-      Emulator::SaveUncompressed(&current_state);
+      Emulator::Save(&current_state);
       vector<Replacement> replacements;
       double improvability = 0.0;
       TryImprove(&start, improveme, current_state,
@@ -1669,7 +1667,7 @@ struct PlayFun {
 	  movie,
 	  subtitles);
       Rewind(start.movenum);
-      Emulator::LoadUncompressed(&start.save);
+      Emulator::Load(&start.save);
 
       set< vector<uint8> > tryme;
       vector< vector<uint8> > tryvec;

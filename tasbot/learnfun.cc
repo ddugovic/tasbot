@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
 
   {
     vector<uint8> save;
-    Emulator::SaveUncompressed(&save);
+    Emulator::Save(&save);
     printf("Save states are %ld bytes.\n", save.size());
   }
 
