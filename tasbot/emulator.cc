@@ -389,7 +389,7 @@ void Emulator::Load(vector<uint8> *state) {
 // Without screenshot, ~1.3kb and only 40% slowdown
 // XXX External interface now allows client to specify, so maybe just
 // make this a guarantee.
-#define USE_COMPRESSION 1
+#define USE_COMPRESSION 0
 
 #if USE_COMPRESSION
 
