@@ -179,12 +179,14 @@ struct PlayFun {
     solution = SimpleFM2::ReadInputs(MOVIE);
 
     size_t start = 0;
-    bool saw_input = false;
-    while (start < solution.size()) {
+    while (start < FASTFORWARD && start < solution.size()) {
       Commit(solution[start], "warmup");
       watermark++;
-      saw_input = saw_input || solution[start] != 0;
-      if (start > FASTFORWARD && saw_input) break;
+      start++;
+    }
+    while (solution[start] == 0 && start < solution.size()) {
+      Commit(solution[start], "warmup");
+      watermark++;
       start++;
     }
 

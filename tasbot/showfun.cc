@@ -88,6 +88,10 @@ int main(int argc, char *argv[]) {
 
   if (argc == 1) {
     printf("Skipping frames without argument.\n");
+    while (start < FASTFORWARD && start < movie.size()) {
+      Emulator::Step(movie[start]);
+      start++;
+    }
     while (movie[start] == 0 && start < movie.size()) {
       Emulator::Step(movie[start]);
       start++;

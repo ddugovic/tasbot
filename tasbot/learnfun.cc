@@ -151,15 +151,15 @@ int main(int argc, char *argv[]) {
   size_t start = 0;
 
   printf("Skipping frames without argument.\n");
-  bool saw_input = false;
-  while ((start < FASTFORWARD && !saw_input) && 
-	 start < movie.size()) {
-    if (movie[start] != 0) saw_input = true;
+  while (start < FASTFORWARD && start < movie.size()) {
     Emulator::Step(movie[start]);
     start++;
   }
-
-  CHECK(start != movie.size());
+  while (movie[start] == 0 && start < movie.size()) {
+    Emulator::Step(movie[start]);
+    start++;
+  }
+  CHECK(start < movie.size());
 
   printf("Skipped %ld frames until first keypress/ffwd.\n"
 	 "Playing %ld frames...\n", start, movie.size() - start);
