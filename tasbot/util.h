@@ -93,15 +93,8 @@ T VectorMax(T def, const vector<T> &v) {
 
 // Truncate unnecessary trailing zeroes to save space.
 inline string Coord(double f) {
-  char s[24];
-  int n = sprintf(s, "%.3f", f) - 1;
-  while (n >= 0 && s[n] == '0') {
-    s[n] = '\0';
-    n--;
-  }
-  if (n <= 0) return "0";
-  else if (s[n] == '.') s[n] = '\0';
-
+  char s[12];
+  sprintf(s, "%d", (int)f);
   return (string)s;
 }
 

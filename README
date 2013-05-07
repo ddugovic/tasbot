@@ -95,11 +95,10 @@
    Note that MARIONET is vulnerable to remote exploitation (it loads
    savestates, assuming they're valid). Don't run it on open networks.
 
- - Playfun will run forever. Every once in a while it writes
-   an .fm2 file (*-playfun-futures-progress.fm2) which you can
-   view in FCEUX to see what it's doing! Note that playfun is
-   very slow; on a 6-core Intel Extreme whatever, I often run it
-   for many days to produce a few minutes of gameplay.
+ - Playfun will run forever. Every 100 frames it writes an .fm2 file
+   (*-playfun-futures-progress.fm2) which you can play in FCEUX to see
+   what it's doing! Note that playfun is slow; on a 2-core AMD Turion,
+   it takes 5 minutes to generate 1 second (60 frames) of gameplay.
 
  - Read TODO for ideas on how to improve this program. To date I've
    mainly focused on refactors to accomodate future changes and to

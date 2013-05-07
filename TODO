@@ -2,6 +2,9 @@ Things to do or try:
 
 Consider making a simple markov model of inputs rather than fixed motifs.
 
+Do some breadth-first search. When input doesn't affect next state, spend
+less time searching and more time backtracking.
+
 Instead of motifs of fixed length, try sequences of random varying length.
 
 We should consider explicitly taking into account the tree of inputs,

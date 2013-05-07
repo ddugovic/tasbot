@@ -205,14 +205,14 @@ struct PlayFun {
   int watermark;
 
   // Number of real futures to push forward.
-  static const int NFUTURES = 24;
+  static const int NFUTURES = 20;
 
   // Number of futures that should be generated from weighted
   // motifs as opposed to totally random.
-  static const int NWEIGHTEDFUTURES = 28;
+  static const int NWEIGHTEDFUTURES = 5;
 
   // Drop this many of the worst futures.
-  static const int DROPFUTURES = 4;
+  static const int DROPFUTURES = 10;
   // TODO: copy some of the best futures over bad futures,
   // randomizing the tails.
 
@@ -473,7 +473,8 @@ struct PlayFun {
     distributions.push_back(distribution);
 
     uint64 end = time(NULL);
-    fprintf(stderr, "Parallel step took %d seconds.\n", (int)(end - start));
+    fprintf(stderr, "Parallel step took %d seconds, score %f.\n",
+	    (int)(end_time - start_time), best_score);
   }
 
   // XXX
@@ -656,10 +657,7 @@ struct PlayFun {
 
       if (iters % 10 == 0) {
 	SaveMovie();
-	SaveQuickDiagnostics(futures);
-	if (iters % 50 == 0) {
-	  SaveDiagnostics(futures);
-	}
+	SaveDiagnostics(futures);
       }
     }
   }
@@ -673,16 +671,9 @@ struct PlayFun {
     Emulator::PrintCacheStats();
   }
 
-  void SaveQuickDiagnostics(const vector<Future> &futures) {
-    printf("                     - quick diagnostics -\n");
-    SaveFuturesHTML(futures, GAME "-playfun-futures.html");
-  }
-
   void SaveDiagnostics(const vector<Future> &futures) {
-    printf("                     - slow diagnostics -\n");
-    // This is now too expensive because the futures aren't cached
-    // in this process.
-    #if 0
+    printf("                     - writing diagnostics -\n");
+    SaveFuturesHTML(futures, GAME "-playfun-futures.html");
     for (int i = 0; i < futures.size(); i++) {
       vector<uint8> fmovie = movie;
       for (int j = 0; j < futures[i].inputs.size(); j++) {
@@ -693,9 +684,11 @@ struct PlayFun {
 			       "base64:jjYwGG411HcjG/j9UOVM3Q==",
 			       fmovie);
       }
+      for (int j = 0; j < futures[i].inputs.size(); j++) {
+        fmovie.pop_back();
+      }
     }
     printf("Wrote %d movie(s).\n", futures.size() + 1);
-    #endif
     SaveDistributionSVG(distributions, GAME "-playfun-scores.svg");
     objectives->SaveSVG(memories, GAME "-playfun-futures.svg");
     motifs->SaveHTML(GAME "-playfun-motifs.html");

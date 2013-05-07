@@ -14,6 +14,10 @@
 #include "simplefm2.h"
 #include "motifs-style.h"
 
+// Cheat by masking inputs to reduce search tree width
+// #define INPUTMASK (~(INPUT_T | INPUT_S))
+#define INPUTMASK 0xFF
+
 Motifs::Motifs() : rc("motifs") {}
 
 static string InputsToString(const vector<uint8> &inputs) {
@@ -57,12 +61,12 @@ Motifs *Motifs::LoadFromFile(const string &filename) {
     while (!ss.eof()) {
       int i;
       ss >> i;
-      inputs.push_back((uint8)i);
+      inputs.push_back((uint8)i & INPUTMASK);
     }
-
     // printf("MOTIF: %f | %s\n", d, InputsToString(inputs).c_str());
     mm->motifs.insert(make_pair(inputs, Info(d)));
   }
+  printf("Read %lld motifs from %s.\n", mm->motifs.size(), filename.c_str());
 
   return mm;
 }
