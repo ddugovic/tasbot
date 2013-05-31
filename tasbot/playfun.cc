@@ -83,9 +83,13 @@ static void SaveDistributionSVG(const vector<Scoredist> &dists,
   string out = TextSVG::Header(WIDTH + 12, HEIGHT + 12);
 
   // immediates, positives, negatives all are in same value space
-  double maxval = 0.0;
+  double minval = 1.0, maxval = 0.0;
   for (int i = 0; i < dists.size(); i++) {
     const Scoredist &dist = dists[i];
+    minval =
+      VectorMin(VectorMin(VectorMin(minval, dist.negatives),
+			  dist.positives),
+		dist.immediates);
     maxval =
       VectorMax(VectorMax(VectorMax(maxval, dist.negatives),
 			  dist.positives),
@@ -98,12 +102,13 @@ static void SaveDistributionSVG(const vector<Scoredist> &dists,
     const Scoredist &dist = dists[i];
     double xf = dist.startframe / (double)totalframes;
     out += DrawDots(WIDTH, HEIGHT,
-		    "#33A", xf, dist.immediates, maxval, dist.chosen_idx);
+		    "#33A", xf, dist.immediates, minval, maxval, dist.chosen_idx);
     out += DrawDots(WIDTH, HEIGHT,
-		    "#090", xf, dist.positives, maxval, dist.chosen_idx);
+		    "#090", xf, dist.positives, minval, maxval, dist.chosen_idx);
     out += DrawDots(WIDTH, HEIGHT,
-		    "#A33", xf, dist.negatives, maxval, dist.chosen_idx);
-    // out += DrawDots("#000", xf, dist.norms, 1.0, dist.chosen_idx);
+		    "#A33", xf, dist.negatives, minval, maxval, dist.chosen_idx);
+    out += DrawDots(WIDTH, HEIGHT,
+		    "#000", xf, dist.norms, minval, maxval, dist.chosen_idx);
   }
 
   // XXX args?

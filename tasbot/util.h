@@ -12,15 +12,23 @@
 #include "tasbot.h"
 #include "../cc-lib/arcfour.h"
 
-#define ANSI_RED "\x1B[1;31;40m"
-#define ANSI_GREY "\x1B[1;30;40m"
-#define ANSI_BLUE "\x1B[1;34;40m"
-#define ANSI_CYAN "\x1B[1;36;40m"
-#define ANSI_YELLOW "\x1B[1;33;40m"
-#define ANSI_GREEN "\x1B[1;32;40m"
-#define ANSI_WHITE "\x1B[1;37;40m"
-#define ANSI_PURPLE "\x1B[1;35;40m"
-#define ANSI_RESET "\x1B[m"
+#define ANSI_RESET "\x1B[0m"
+#define ANSI_GREY "\x1B[30m"
+#define ANSI_RED "\x1B[31m"
+#define ANSI_GREEN "\x1B[32m"
+#define ANSI_YELLOW "\x1B[33m"
+#define ANSI_BLUE "\x1B[34m"
+#define ANSI_PURPLE "\x1B[35m"
+#define ANSI_CYAN "\x1B[36m"
+#define ANSI_WHITE "\x1B[37m"
+
+// TODO: Don't inject special characters into stdout/stderr when
+//       trying to redirect those streams to log files.
+// TODO: Verbose logging in plaintext format (for grep)
+#define LOG(...) printf(__VA_ARGS__)
+#define TERM_START(n) InPlaceTerminal term(n)
+#define TERM(term, s) term.Output(s)
+#define TERM_FLUSH(term) term.Advance()
 
 using namespace std;
 
@@ -84,22 +92,43 @@ inline double RandomDouble(ArcFour *rc) {
 }
 
 template<class T>
+T VectorMin(T def, const vector<T> &v) {
+#if 0
+  for (int i = 0; i < v.size(); i++) {
+    if (v[i] < def) def = v[i];
+  }
+  return def;
+#else
+  if (v.empty())
+    return def;
+  T min = *min_element(v.begin(), v.end());
+  if (min < def)
+    return min;
+  return def;
+#endif
+}
+template<class T>
 T VectorMax(T def, const vector<T> &v) {
+#if 0
   for (int i = 0; i < v.size(); i++) {
     if (v[i] > def) def = v[i];
   }
   return def;
+#else
+  if (v.empty())
+    return def;
+  T max = *max_element(v.begin(), v.end());
+  if (max > def)
+    return max;
+  return def;
+#endif
 }
 
 // Truncate unnecessary trailing zeroes to save space.
-inline string Coord(double f) {
-  char s[12];
-  sprintf(s, "%d", (int)f);
-  return (string)s;
-}
-
 inline string Coords(double x, double y) {
-  return Coord(x) + "," + Coord(y);
+  char s[25];
+  sprintf(s, "%.2f,%.2f", x, y);
+  return (string)s;
 }
 
 // This is for when a process is doing something where it'd
@@ -136,9 +165,9 @@ string SVGTickmarks(double width, double maxx, double span,
 // drawing; values above this or below zero are drawn outside the box.
 // If chosen_idx is in [0, values.size()) then draw that one bigger.
 // Color is an svg color string like "#f00".
-string DrawDots(int width, int height,
+string DrawDots(const double width, const double height,
                 const string &color, double xf,
-                const vector<double> &values, double maxval,
+                const vector<double> &values, double minval, double maxval,
                 int chosen_idx);
 
 

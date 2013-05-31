@@ -2,6 +2,7 @@
 
 string SVGTickmarks(double width, double maxx, double span,
 		    double tickheight, double tickfont) {
+  printf("SVGTickmarks %f %f %f\n", width, maxx, span);
   string out;
   bool longone = true;
   for (double x = 0.0; x < maxx; x += span) {
@@ -9,48 +10,49 @@ string SVGTickmarks(double width, double maxx, double span,
     out += 
       StringPrintf("  <polyline fill=\"none\" opacity=\"0.5\""
 		   " stroke=\"#000000\""
-		   " stroke-width=\"1\" points=\"%f,0 %f,%f\" />\n",
+		   " stroke-width=\"1\" points=\"%.2f,0.00 %.2f,%.2f\" />\n",
 		   width * xf, width * xf, 
 		   longone ? tickheight * 2 : tickheight);
     if (longone)
-      out += StringPrintf("<text x=\"%f\" y=\"%f\" font-size=\"%f\">"
+      out += StringPrintf("<text x=\"%.2f\" y=\"%.2f\" font-size=\"%.2f\">"
 			  "<tspan fill=\"#000000\">%d</tspan>"
 			  "</text>\n",
 			  width * xf + 3.0, 2.0 * tickheight + 2.0,
 			  tickfont, (int)x);
-
     longone = !longone;
   }
   return out;
 }
 
-string DrawDots(int WIDTH, int HEIGHT,
+string DrawDots(const double WIDTH, const double HEIGHT,
 		const string &color, double xf,
-		const vector<double> &values, double maxval, 
+		const vector<double> &values, double minval, double maxval, 
 		int chosen_idx) {
-  // CHECK(colors.size() == values.size());
   vector<double> sorted = values;
   std::sort(sorted.begin(), sorted.end());
   string out;
+  int size = values.size();
   for (int i = 0; i < values.size(); i++) {
-    int size = values.size();
     int sorted_idx = 
       lower_bound(sorted.begin(), sorted.end(), values[i]) - sorted.begin();
-    double opacity = 1.0;
+    double opacity;
     if (sorted_idx < 0.1 * size || sorted_idx > 0.9 * size) {
       opacity = 0.2;
     } else if (sorted_idx < 0.2 * size || sorted_idx > 0.8 * size) {
       opacity = 0.4;
     } else if (sorted_idx < 0.3 * size || sorted_idx > 0.7 * size) {
+      opacity = 0.6;
+    } else if (sorted_idx < 0.4 * size || sorted_idx > 0.6 * size) {
       opacity = 0.8;
-    } else if (sorted_idx == size / 2) {
+    } else {
       opacity = 1.0;
     }
-    out += StringPrintf("<circle cx=\"%s\" cy=\"%s\" r=\"%d\" "
+    double yf = (values[i] - minval) / (maxval - minval);
+    out += StringPrintf("<circle cx=\"%.1f\" cy=\"%.1f\" r=\"%d\" "
 			"opacity=\"%.1f\" "
 			"fill=\"%s\" />",
-			Coord(xf * WIDTH).c_str(), 
-			Coord(HEIGHT * (1.0 - (values[i] / maxval))).c_str(),
+			WIDTH * xf,
+			HEIGHT * yf,
 			(i == chosen_idx) ? 10 : 4,
 			opacity,
 			color.c_str());
@@ -66,7 +68,7 @@ InPlaceTerminal::InPlaceTerminal(int lines)
 void InPlaceTerminal::Output(const string &s) {
   if (last_was_output) {
     for (int i = 0; i < lines; i++) {
-      fprintf(stdout,
+      fprintf(stderr,
 	      // Cursor to beginning of previous line
 	      "\x1B[F"
 	      // Clear line
