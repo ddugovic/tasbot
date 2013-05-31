@@ -5,21 +5,17 @@ default: playfun learnfun showfun
 
 all: playfun tasbot emu_test objective_test learnfun weighted-objectives_test showfun
 
-#CXXFLAGS=-Wall -Wno-deprecated -Wno-sign-compare -Wno-write-strings -I/usr/local/include -fno-strict-aliasing
-CXXFLAGS=-Wall -Wno-deprecated -Wno-sign-compare -I/usr/local/include
+#CXXFLAGS=-Wall -Wno-sign-compare -I/usr/local/include -fno-strict-aliasing
+CXXFLAGS=-Wall -Wno-sign-compare -I/usr/local/include
 CXX=g++
 CC=g++
 SDLARCH=x64
 
-PROTOC=protoc
-PROTO_HEADERS=marionet.pb.h
-PROTO_OBJECTS=marionet.pb.o
-
 # If you don't have SDL, you can leave these out, and maybe it still works.
-CCNETWORKING= -DMARIONET -I /usr/include/SDL
-#CCNETWORKING= -I /usr/include/SDL
-LINKSDL=  -lSDL -lSDL_net
-LINKNETWORKING= $(LINKSDL) -lprotobuf -lpthread
+CCNETWORKING=-DMARIONET -I /usr/include/SDL
+#CCNETWORKING=-I /usr/include/SDL
+LINKSDL=-lSDL -lSDL_net
+LINKNETWORKING=$(LINKSDL) -lprotobuf -lpthread
 
 #PROFILE=-pg -g
 #PROFILE=-g
@@ -64,16 +60,19 @@ UTILSOBJECTS=fceu/utils/ConvertUTF.o fceu/utils/general.o fceu/utils/memory.o fc
 
 EMUOBJECTS=$(FCEUOBJECTS) $(MAPPEROBJECTS) $(UTILSOBJECTS) $(PALLETESOBJECTS) $(BOARDSOBJECTS) $(INPUTOBJECTS) $(DRIVERS_COMMON_OBJECTS)
 
-TASBOT_OBJECTS=headless-driver.o config.o simplefm2.o emulator.o basis-util.o objective.o weighted-objectives.o motifs.o netutil.o util.o
-#TASBOT_OBJECTS=headless-driver.o config.o simplefm2.o emulator.o basis-util.o objective.o weighted-objectives.o motifs.o util.o
+PROTOC=protoc
+PROTO_OBJECTS=marionet.pb.o
+
+MARIONET_OBJECTS=$(PROTO_OBJECTS) netutil.o
+TASBOT_OBJECTS=$(MARIONET_OBJECTS) headless-driver.o config.o simplefm2.o emulator.o basis-util.o objective.o weighted-objectives.o motifs.o util.o
+
+%.o: %.cc %.cpp %.h
+	$(CXX) -o $@ -c $< $(CPPFLAGS)
 
 #included in all tests, etc.
-OBJECTS=$(CCLIBOBJECTS) $(EMUOBJECTS) $(PROTO_HEADERS) $(PROTO_OBJECTS) $(TASBOT_OBJECTS)
+OBJECTS=$(CCLIBOBJECTS) $(EMUOBJECTS) $(TASBOT_OBJECTS)
 
 %.pb.cc: %.proto
-	$(PROTOC) $< --cpp_out=.
-
-%.pb.h: %.proto
 	$(PROTOC) $< --cpp_out=.
 
 tasbot : $(OBJECTS) tasbot.o

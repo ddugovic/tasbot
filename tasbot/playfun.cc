@@ -161,7 +161,7 @@ struct PlayFun {
     Emulator::Initialize(GAME ".nes");
     objectives = WeightedObjectives::LoadFromFile(GAME ".objectives");
     CHECK(objectives);
-    fprintf(stderr, "Loaded %d objective functions\n", objectives->Size());
+    fprintf(stderr, "Loaded %zu objective functions\n", objectives->Size());
 
     motifs = Motifs::LoadFromFile(GAME ".motifs");
     CHECK(motifs);
@@ -946,7 +946,7 @@ struct PlayFun {
 		    vector<double> *futuretotals,
 		    int *best_next_idx) {
     uint64 start_time = time(NULL);
-    fprintf(stderr, "Parallel step with %d nexts, %d futures.\n",
+    fprintf(stderr, "Parallel step with %zu nexts, %zu futures.\n",
 	    nexts.size(), futures.size());
     CHECK(nexts.size() > 0);
     *best_next_idx = 0;
@@ -1133,7 +1133,7 @@ struct PlayFun {
 
     if (futures->size() != NFUTURES) {
       fprintf(stderr, "?? Expected futures to have size %d but "
-	      "it has %d.\n", NFUTURES, futures->size());
+	      "it has %zu.\n", NFUTURES, futures->size());
     }
 
     // Save our current state so we can try many different branches.
@@ -1310,7 +1310,7 @@ struct PlayFun {
       TakeBestAmong(nexts, nextplanations, &futures, true);
 
       fprintf(stderr, "%d rounds, "
-	      ANSI_WHITE "%d inputs" ANSI_RESET ". backtrack in %d. "
+	      ANSI_WHITE "%zu inputs" ANSI_RESET ". backtrack in %d. "
 	      "Cxpoints at ",
 	      iters, movie.size(), rounds_until_backtrack);
 
@@ -1353,7 +1353,7 @@ struct PlayFun {
     while (todo.size() < NFUTURES) {
       const vector<uint8> *motif = motifs->RandomWeightedMotifNotIn(todo);
       if (motif == NULL) {
-	fprintf(stderr, "No more motifs (have %d todo).\n", todo.size());
+	fprintf(stderr, "No more motifs (have %zu todo).\n", todo.size());
 	break;
       }
 
@@ -1377,7 +1377,7 @@ struct PlayFun {
 		  double *improvability) {
 
     uint64 start_time = time(NULL);
-    fprintf(stderr, "TryImprove step on %d inputs.\n",
+    fprintf(stderr, "TryImprove step on %zu inputs.\n",
 	    improveme.size());
     CHECK(replacements);
     replacements->clear();
@@ -1385,7 +1385,7 @@ struct PlayFun {
     const double current_integral =
       ScoreIntegral(&start->save, improveme, NULL);
 
-    fprintf(log, "<li>Trying to improve frames %d&ndash;%d, %f</li>\n",
+    fprintf(log, "<li>Trying to improve frames %d&ndash;%zu, %f</li>\n",
 	    &start->movenum, movie.size(), current_integral);
 
     #ifdef MARIONET
@@ -1548,9 +1548,8 @@ struct PlayFun {
       uint64 start_time = time(NULL);
 
       fprintf(log,
-	      "<h2>Backtrack at iter %d, end frame %d, %s.</h2>\n",
+	      "<h2>Backtrack at iter %d, end frame %zu, %s.</h2>\n",
 	      iters,
-
 	      movie.size(),
 	      TimeString(start_time).c_str());
       fflush(log);
@@ -1621,13 +1620,13 @@ struct PlayFun {
       // into the future), use the standard TakeBestAmong to score all
       // the potential improvements, as well as the current best.
       fprintf(stderr,
-	      "There are %d+1 possible replacements for last %d moves...\n",
+	      "There are %zu+1 possible replacements for last %d moves...\n",
 	      replacements.size(),
 	      nmoves);
 
       for (int i = 0; i < replacements.size(); i++) {
 	fprintf(log,
-		"<li>%d inputs via %s, %.2f</li>\n",
+		"<li>%zu inputs via %s, %.2f</li>\n",
 		replacements[i].inputs.size(),
 		replacements[i].method.c_str(),
 		replacements[i].score);

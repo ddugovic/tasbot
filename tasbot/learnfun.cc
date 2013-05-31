@@ -44,7 +44,7 @@ static void SaveMemory(vector< vector<uint8> > *memories) {
 
 static vector< vector<int> > *objectives = NULL;
 static void PrintAndSave(const vector<int> &ordering) {
-  printf("%d=[ ", objectives->size());
+  printf("%zu=[ ", objectives->size());
   for (int i = 0; i < ordering.size(); i++) {
     printf("%d ", ordering[i]);
   }
@@ -58,14 +58,14 @@ static void PrintAndSave(const vector<int> &ordering) {
 static void GenerateNthSlices(int divisor, int num, 
 			      const vector< vector<uint8> > &memories,
 			      Objective *obj) {
-  const int onenth = memories.size() / divisor;
+  const size_t onenth = memories.size() / divisor;
   for (int slicenum = 0; slicenum < divisor; slicenum++) {
     vector<int> look;
-    int low = slicenum * onenth;
+    size_t low = slicenum * onenth;
     for (int i = 0; i < onenth; i++) {
       look.push_back(low + i);
     }
-    printf("For slice %ld-%ld:\n", low, low + onenth - 1);
+    printf("For slice %zu-%zu:\n", low, low + onenth - 1);
     for (int i = 0; i < num; i++) {
       obj->EnumerateFull(look, PrintAndSave, 1, slicenum * 0xBEAD + i);
     }
@@ -125,11 +125,11 @@ static void MakeObjectives(const vector< vector<uint8> > &memories) {
   GenerateOccasional(1000, 10, 1, memories, &obj);
 
   // Weight them. Currently this is just removing duplicates.
-  printf("There are %d objectives\n", objectives->size());
+  printf("There are %zu objectives\n", objectives->size());
   WeightedObjectives weighted(*objectives);
-  printf("And %d example memories\n", memories.size());
+  printf("And %zu example memories\n", memories.size());
   weighted.WeightByExamples(memories);
-  printf("And %d unique objectives\n", weighted.Size());
+  printf("And %zu unique objectives\n", weighted.Size());
 
   weighted.SaveToFile(GAME ".objectives");
 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
   }
   uint64 time_end = time(NULL);
 
-  printf("Recorded %ld memories in %ld sec.\n", 
+  printf("Recorded %zu memories in %llu sec.\n", 
          memories.size(),
          time_end - time_start);
 

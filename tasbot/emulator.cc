@@ -149,7 +149,7 @@ struct StateCache {
 	  ++it;
 	}
       }
-      printf("Size is now %d (internally %d)\n", count, hashtable.size());
+      printf("Size is now %d (internally %zu)\n", count, hashtable.size());
     }
   }
 
