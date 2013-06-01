@@ -52,7 +52,7 @@ string DrawDots(const double WIDTH, const double HEIGHT,
 			"opacity=\"%.1f\" "
 			"fill=\"%s\" />",
 			WIDTH * xf,
-			HEIGHT * yf,
+			HEIGHT * (1.0 - yf),
 			(i == chosen_idx) ? 10 : 4,
 			opacity,
 			color.c_str());

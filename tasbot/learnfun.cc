@@ -19,7 +19,6 @@
 #include "fceu/driver.h"
 #include "fceu/drivers/common/args.h"
 #include "fceu/state.h"
-#include "basis-util.h"
 #include "emulator.h"
 #include "fceu/fceu.h"
 #include "fceu/types.h"
@@ -151,11 +150,10 @@ int main(int argc, char *argv[]) {
   size_t start = 0;
 
   printf("Skipping frames without argument.\n");
-  while (start < FASTFORWARD && start < movie.size()) {
-    Emulator::Step(movie[start]);
-    start++;
-  }
-  while (movie[start] == 0 && start < movie.size()) {
+  bool saw_input = false;
+  while ((start < FASTFORWARD || !saw_input) && 
+	 start < movie.size()) {
+    if (movie[start] != 0) saw_input = true;
     Emulator::Step(movie[start]);
     start++;
   }
@@ -175,7 +173,7 @@ int main(int argc, char *argv[]) {
   uint64 time_start = time(NULL);
   for (int i = start; i < movie.size(); i++) {
     if (i % 1000 == 0) {
-      printf("  [% 3.1f%%] %d/%ld\n", 
+      printf("  [% 5.1f%%] %6d/%ld\n", 
 	     ((100.0 * i) / movie.size()), i, movie.size());
       // exit(0);
     }

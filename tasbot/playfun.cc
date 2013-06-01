@@ -76,8 +76,10 @@ struct Scoredist {
 
 static void SaveDistributionSVG(const vector<Scoredist> &dists,
 				const string &filename) {
-  static const double WIDTH = 1024.0;
-  static const double HEIGHT = 1024.0;
+  int totalframes = dists.back().startframe;
+  static const double SPAN = 50 * (totalframes/5000 + 1);
+  static const double WIDTH = totalframes * 1.5; // 1024.0
+  static const double HEIGHT = 768.0;
 
   // Add slop for radii.
   string out = TextSVG::Header(WIDTH + 12, HEIGHT + 12);
@@ -96,8 +98,6 @@ static void SaveDistributionSVG(const vector<Scoredist> &dists,
 		dist.immediates);
   }
 
-  int totalframes = dists.back().startframe;
-
   for (int i = 0; i < dists.size(); i++) {
     const Scoredist &dist = dists[i];
     double xf = dist.startframe / (double)totalframes;
@@ -112,7 +112,7 @@ static void SaveDistributionSVG(const vector<Scoredist> &dists,
   }
 
   // XXX args?
-  out += SVGTickmarks(WIDTH, totalframes, 50.0, 20.0, 12.0);
+  out += SVGTickmarks(WIDTH, totalframes, SPAN, 20.0, 12.0);
 
   out += TextSVG::Footer();
   Util::WriteFile(filename, out);
@@ -123,7 +123,7 @@ namespace {
 struct Future {
   vector<uint8> inputs;
   bool weighted;
-  int desired_length;
+  size_t desired_length;
   // TODO
   int rounds_survived;
   bool is_mutant;
@@ -147,7 +147,7 @@ static void SaveFuturesHTML(const vector<Future> &futures,
 			    const string &filename) {
   string out;
   for (int i = 0; i < futures.size(); i++) {
-    out += StringPrintf("<div>%d. len %d/%d. %s %s\n", i,
+    out += StringPrintf("<div>%d. len %zu/%zu. %s %s\n", i,
 			futures[i].inputs.size(),
 			futures[i].desired_length,
 			futures[i].is_mutant ? "mutant" : "fresh",
@@ -211,8 +211,8 @@ struct PlayFun {
     vector<uint8> save;
     // such that truncating movie to length movenum
     // produces the savestate.
-    int movenum;
-    Checkpoint(const vector<uint8> save, int movenum)
+    size_t movenum;
+    Checkpoint(const vector<uint8> save, size_t movenum)
       : save(save), movenum(movenum) {}
     // For putting in containers.
     Checkpoint() : movenum(0) {}
@@ -278,7 +278,7 @@ struct PlayFun {
     }
   }
 
-  void Rewind(int movenum) {
+  void Rewind(size_t movenum) {
     // Is it possible / meaningful to rewind stuff like objectives
     // observations?
     CHECK(movenum >= 0);
@@ -366,18 +366,19 @@ struct PlayFun {
 	    futures.push_back(f);
 	  }
 
-	  double immediate_score, best_future_score, worst_future_score,
-	    future_score;
+	  double immediate_score, normalized_score,
+            best_future_score, worst_future_score, future_score;
 	  vector<double> futurescores(futures.size(), 0.0);
 
 	  // Do the work.
 	  InnerLoop(next, futures, &current_state,
-		    &immediate_score, &best_future_score,
-		    &worst_future_score, &future_score,
-		    &futurescores);
+		    &immediate_score, &normalized_score,
+		    &best_future_score, &worst_future_score,
+		    &future_score, &futurescores);
 
 	  PlayFunResponse res;
 	  res.set_immediate_score(immediate_score);
+	  res.set_normalized_score(normalized_score);
 	  res.set_best_future_score(best_future_score);
 	  res.set_worst_future_score(worst_future_score);
 	  res.set_futures_score(future_score);
@@ -486,7 +487,7 @@ struct PlayFun {
 			   false);
 
       for (int i = 0; i < req.iters(); i++) {
-	int start, len;
+	size_t start, len;
 	GetRandomSpan(inputs, 1.0, &rc, &start, &len);
 	if (len == 0 && start != inputs.size()) len = 1;
 	bool keepreversed = rc.Byte() & 1;
@@ -534,9 +535,9 @@ struct PlayFun {
 
 	// We allow using iterations to chop more from the thing
 	// we just chopped, if it was an improvement.
-	int depth = 0;
+	int depth = 1;
 	for (; i < req.iters(); i++, depth++) {
-	  int start, len;
+	  size_t start, len;
 	  // Use exponent of 2 (prefer smaller spans) because
 	  // otherwise chopping is quite blunt.
 	  GetRandomSpan(inputs, 2.0, &rc, &start, &len);
@@ -551,7 +552,7 @@ struct PlayFun {
 			    end_memory, end_integral,
 			    &score)) {
 	    term.Advance();
-	    fprintf(stderr, "Improved (chop %d for %d depth %d)! %f\n",
+	    fprintf(stderr, "Improved (chop %zu for %zu depth %d)! %f\n",
 		    start, len, depth, score);
 	    repls.push_back(make_pair(score, inputs));
 
@@ -599,13 +600,13 @@ struct PlayFun {
   // Exponent controls the length of the span. Large exponents
   // yield smaller spans. Note that this will return empty spans.
   void GetRandomSpan(const vector<uint8> &inputs, double exponent,
-		     ArcFour *rc, int *start, int *len) {
-    *start = RandomDouble(rc) * inputs.size();
+		     ArcFour *rc, size_t *start, size_t *len) {
+    *start = (size_t)(RandomDouble(rc) * inputs.size());
     if (*start < 0) *start = 0;
     if (*start >= inputs.size()) *start = inputs.size() - 1;
-    int maxlen = inputs.size() - *start;
+    size_t maxlen = inputs.size() - *start;
     double d = pow(RandomDouble(rc), exponent);
-    *len = d * maxlen;
+    *len = (size_t)(d * maxlen);
     if (*len < 0) *len = 0;
     if (*len >= maxlen) *len = maxlen;
   }
@@ -751,7 +752,7 @@ struct PlayFun {
 
     if (term != NULL) {
       string msg =
-	StringPrintf("%2.f%%  Send %f  Snew %f  n-e %f\n",
+	StringPrintf("%3.f%%  Send %7.3f  Snew %7.3f  n-e %7.3f\n",
 		     100.0 * frac,
 		     end_integral, new_integral, n_minus_e);
       term->Output(msg);
@@ -805,7 +806,7 @@ struct PlayFun {
 
     if (term != NULL) {
       string msg =
-	StringPrintf("%2.f%%  e-s %f  n-s %f  n-e %f\n",
+	StringPrintf("%3.f%%  e-s %7.3f  n-s %7.3f  n-e %7.3f\n",
 		     100.0 * frac,
 		     e_minus_s, n_minus_s, n_minus_e);
       term->Output(msg);
@@ -844,6 +845,7 @@ struct PlayFun {
 		 const vector<Future> &futures_orig,
 		 vector<uint8> *current_state,
 		 double *immediate_score,
+		 double *normalized_score,
 		 double *best_future_score,
 		 double *worst_future_score,
 		 double *future_score,
@@ -870,10 +872,11 @@ struct PlayFun {
     // Used to be BuggyEvaluate = WeightedLess? XXX
     *immediate_score = objectives->Evaluate(current_memory, new_memory);
 
+    // Data visualization is more important than performance
     // PERF unused except for drawing
     // XXX probably shouldn't do this since it depends on local
     // storage.
-    // double norm_score = objectives->GetNormalizedValue(new_memory);
+    *normalized_score = objectives->GetNormalizedValue(new_memory);
 
     *best_future_score = -1e80;
     *worst_future_score = 1e80;
@@ -993,9 +996,10 @@ struct PlayFun {
       distribution.immediates.push_back(res.immediate_score());
       distribution.positives.push_back(res.best_future_score());
       distribution.negatives.push_back(res.worst_future_score());
+      // Even if it's not globally accurate, data is better than no data
       // XXX norm score is disabled because it can't be
       // computed in a distributed fashion.
-      distribution.norms.push_back(0);
+      distribution.norms.push_back(res.normalized_score());
 
       if (score > best_score) {
 	best_score = score;
@@ -1114,7 +1118,8 @@ struct PlayFun {
     out.desired_length = input.desired_length;
 
     // Replace tail with something random.
-    out.inputs.resize(max(MINFUTURELENGTH, input.desired_length / 2));
+    const size_t size = MINFUTURELENGTH;
+    out.inputs.resize(max(size, out.desired_length / 2));
 
     // Occasionally, try something very different.
     if ((rc.Byte() & 7) == 0) {
@@ -1300,7 +1305,7 @@ struct PlayFun {
     vector<Future> futures;
 
     int rounds_until_backtrack = TRY_BACKTRACK_EVERY;
-    int64 iters = 1;
+    uint64 iters = 1;
 
     PopulateFutures(&futures);
     for (;; iters++) {
@@ -1314,23 +1319,25 @@ struct PlayFun {
 
       TakeBestAmong(nexts, nextplanations, &futures, true);
 
-      fprintf(stderr, "%d rounds, "
+      fprintf(stderr, "%llu rounds, "
 	      ANSI_WHITE "%zu inputs" ANSI_RESET ". backtrack in %d. "
 	      "Cxpoints at ",
 	      iters, movie.size(), rounds_until_backtrack);
 
       for (int i = 0, j = checkpoints.size() - 1; i < 3 && j >= 0; i++) {
-	fprintf(stderr, "%d, ", checkpoints[j].movenum);
+	fprintf(stderr, "%zu, ", checkpoints[j].movenum);
 	j--;
       }
       fprintf(stderr, "...\n");
 
-      MaybeBacktrack(iters, &rounds_until_backtrack, &futures);
-
       if (iters % SAVE_EVERY == 0) {
-	SaveMovie();
+	SaveMovie(iters);
 	SaveDiagnostics(futures);
       }
+
+      // In theory diagnostics could assist backtrack, right?
+      // So do this last.
+      MaybeBacktrack(iters, &rounds_until_backtrack, &futures);
     }
   }
 
@@ -1390,8 +1397,8 @@ struct PlayFun {
     const double current_integral =
       ScoreIntegral(&start->save, improveme, NULL);
 
-    fprintf(log, "<li>Trying to improve frames %d&ndash;%zu, %f</li>\n",
-	    &start->movenum, movie.size(), current_integral);
+    fprintf(log, "<li>Trying to improve frames %zu&ndash;%zu, %f</li>\n",
+	    start->movenum, movie.size(), current_integral);
 
     #ifdef MARIONET
     static const int MAXBEST = 10;
@@ -1429,7 +1436,7 @@ struct PlayFun {
       TryImproveRequest req = base_req;
       req.set_approach(TryImproveRequest::OPPOSITES);
       req.set_iters(OPPOSITES_ITERS);
-      req.set_seed(StringPrintf("opp%d", start->movenum));
+      req.set_seed(StringPrintf("opp%zu", start->movenum));
 
       HelperRequest hreq;
       hreq.mutable_tryimprove()->MergeFrom(req);
@@ -1439,7 +1446,7 @@ struct PlayFun {
     for (int i = 0; i < NUM_ABLATION; i++) {
       TryImproveRequest req = base_req;
       req.set_iters(ABLATION_ITERS);
-      req.set_seed(StringPrintf("abl%d.%d", start->movenum, i));
+      req.set_seed(StringPrintf("abl%zu.%d", start->movenum, i));
       req.set_approach(TryImproveRequest::ABLATION);
 
       HelperRequest hreq;
@@ -1450,7 +1457,7 @@ struct PlayFun {
     for (int i = 0; i < NUM_CHOP; i++) {
       TryImproveRequest req = base_req;
       req.set_iters(CHOP_ITERS);
-      req.set_seed(StringPrintf("chop%d.%d", start->movenum, i));
+      req.set_seed(StringPrintf("chop%zu.%d", start->movenum, i));
       req.set_approach(TryImproveRequest::CHOP);
 
       HelperRequest hreq;
@@ -1461,7 +1468,7 @@ struct PlayFun {
     for (int i = 0; i < NUM_IMPROVE_RANDOM; i++) {
       TryImproveRequest req = base_req;
       req.set_iters(RANDOM_ITERS);
-      req.set_seed(StringPrintf("seed%d.%d", start->movenum, i));
+      req.set_seed(StringPrintf("seed%zu.%d", start->movenum, i));
       req.set_approach(TryImproveRequest::RANDOM);
 
       HelperRequest hreq;
@@ -1587,12 +1594,12 @@ struct PlayFun {
       // checkpoints array and cause disappointment.
       Checkpoint start = *start_ptr;
 
-      const int nmoves = movie.size() - start.movenum;
+      const size_t nmoves = movie.size() - start.movenum;
       CHECK(nmoves > 0);
 
       // Inputs to be improved.
       vector<uint8> improveme;
-      for (int i = start.movenum; i < movie.size(); i++) {
+      for (size_t i = start.movenum; i < movie.size(); i++) {
 	improveme.push_back(movie[i]);
       }
 
@@ -1625,7 +1632,7 @@ struct PlayFun {
       // into the future), use the standard TakeBestAmong to score all
       // the potential improvements, as well as the current best.
       fprintf(stderr,
-	      "There are %zu+1 possible replacements for last %d moves...\n",
+	      "There are %zu+1 possible replacements for last %zu moves...\n",
 	      replacements.size(),
 	      nmoves);
 
@@ -1638,12 +1645,7 @@ struct PlayFun {
       }
       fflush(log);
 
-      SimpleFM2::WriteInputsWithSubtitles(
-	  StringPrintf(GAME "-playfun-backtrack-%d-replaced.fm2", iters),
-	  GAME ".nes",
-	  BASE64,
-	  movie,
-	  subtitles);
+      // PERF Perhaps movie is already rewound?
       Rewind(start.movenum);
       Emulator::Load(&start.save);
 
@@ -1670,9 +1672,9 @@ struct PlayFun {
 
       // vector< vector<uint8> > tryvec(tryme.begin(), tryme.end());
       if (tryvec.size() != replacements.size() + 1) {
-	fprintf(stderr, "... but there were %d duplicates (removed).\n",
+	fprintf(stderr, "... but there were %zu duplicates (removed).\n",
 		(replacements.size() + 1) - tryvec.size());
-	fprintf(log, "<li><b>%d total but there were %d duplicates (removed)."
+	fprintf(log, "<li><b>%zu total but there were %zu duplicates (removed)."
 		"</b></li>\n",
 		replacements.size() + 1,
 		(replacements.size() + 1) - tryvec.size());
@@ -1685,9 +1687,9 @@ struct PlayFun {
       // cached, at least.
       TakeBestAmong(tryvec, trysplanations, futures, false);
 
-      fprintf(stderr, "Write replacement movie.\n");
+      fprintf(stderr, "Write improvement movie.\n");
       SimpleFM2::WriteInputsWithSubtitles(
-	  StringPrintf(GAME "-playfun-backtrack-%d-replacement.fm2", iters),
+	  StringPrintf(GAME "-playfun-backtrack-%llu.fm2", iters),
 	  GAME ".nes",
 	  BASE64,
 	  movie,
@@ -1696,44 +1698,43 @@ struct PlayFun {
       // What to do about futures? This is simplest, I guess...
       uint64 end_time = time(NULL);
       fprintf(stderr,
-	      "Backtracking took %d seconds in total. "
+	      "Backtracking took %llu seconds in total. "
 	      "Back to normal search...\n",
 	      end_time - start_time);
       fprintf(log,
-	      "<li>Backtracking took %d seconds in total.</li>\n",
+	      "<li>Backtracking took %llu seconds in total.</li>\n",
 	      end_time - start_time);
       fflush(log);
     }
   }
 
-  void SaveMovie() {
+  void SaveMovie(uint64 &iters) {
     printf("                     - writing movie -\n");
-    SimpleFM2::WriteInputsWithSubtitles(GAME "-playfun-futures-progress.fm2",
-					GAME ".nes",
-					BASE64,
-					movie,
-					subtitles);
+    SimpleFM2::WriteInputsWithSubtitles(StringPrintf(GAME "-playfun-%llu.fm2", iters),
+	GAME ".nes",
+	BASE64,
+	movie,
+	subtitles);
     Emulator::PrintCacheStats();
   }
 
   void SaveDiagnostics(const vector<Future> &futures) {
     printf("                     - writing diagnostics -\n");
     SaveFuturesHTML(futures, GAME "-playfun-futures.html");
+    #ifdef DEBUGFUTURES
     vector<uint8> fmovie = movie;
+    const size_t size = fmovie.size();
     for (int i = 0; i < futures.size(); i++) {
-      for (int j = 0; j < futures[i].inputs.size(); j++) {
-	fmovie.push_back(futures[i].inputs[j]);
-	SimpleFM2::WriteInputs(StringPrintf(GAME "-playfun-future-%d.fm2",
-					    i),
-			       GAME ".nes",
-			       BASE64,
-			       fmovie);
-      }
-      for (int j = 0; j < futures[i].inputs.size(); j++) {
-        fmovie.pop_back();
-      }
+      const vector<uint8> &inputs = futures[i].inputs;
+      fmovie.insert(fmovie.end(), inputs.begin(), inputs.end());
+      SimpleFM2::WriteInputs(StringPrintf(GAME "-playfun-future-%d.fm2", i),
+	  GAME ".nes",
+	  BASE64,
+	  fmovie);
+      fmovie.resize(size);
     }
-    printf("Wrote %d movie(s).\n", futures.size() + 1);
+    printf("Wrote %zu movie(s).\n", futures.size() + 1);
+    #endif
     SaveDistributionSVG(distributions, GAME "-playfun-scores.svg");
     objectives->SaveSVG(memories, GAME "-playfun-futures.svg");
     motifs->SaveHTML(GAME "-playfun-motifs.html");
@@ -1755,11 +1756,6 @@ struct PlayFun {
   Motifs *motifs;
   vector< vector<uint8> > motifvec;
 };
-
-// Fixes Linux/GNU linker undefined reference error, not sure why.
-// playfun.cc:(.text+0x33ad): undefined reference to `PlayFun::MINFUTURELENGTH'
-// http://stackoverflow.com/questions/5508182/static-const-int-causes-linking-error-undefined-reference
-const int PlayFun::MINFUTURELENGTH;
 
 /**
  * The main loop for the SDL.

@@ -60,7 +60,7 @@ struct StateCache {
   }
 
   void Resize(uint64 ll, uint64 ss) {
-    printf("Resize cache %d %d\n", ll, ss);
+    printf("Resize cache %llu %llu\n", ll, ss);
     // Recover memory.
     for (Hash::iterator it = hashtable.begin(); 
 	 it != hashtable.end(); /* in loop */) {
@@ -115,7 +115,7 @@ struct StateCache {
     // Don't always do this, since it is linear time.
     if (count > limit + slop) {
       const int num_to_remove = count - limit;
-      printf("Resizing (currently %d) to remove %d\n", count, num_to_remove);
+      printf("Resizing (currently %llu) to remove %d\n", count, num_to_remove);
 
       // PERF: This can be done much more efficiently using a flat
       // heap.
@@ -132,7 +132,7 @@ struct StateCache {
       CHECK(num_to_remove < all_sequences.size());
       const uint64 minseq = all_sequences[num_to_remove];
 
-      printf("Removing everything below %d\n", minseq);
+      printf("Removing everything below %llu\n", minseq);
 
       for (Hash::iterator it = hashtable.begin(); it != hashtable.end(); 
 	   /* in loop */) {
@@ -149,13 +149,13 @@ struct StateCache {
 	  ++it;
 	}
       }
-      printf("Size is now %d (internally %zu)\n", count, hashtable.size());
+      printf("Size is now %llu (internally %zu)\n", count, hashtable.size());
     }
   }
 
   void PrintStats() {
-    printf("Current cache size: %ld / %ld. next_seq %ld\n"
-	   "%ld hits and %ld misses\n", 
+    printf("Current cache size: %llu / %llu. next_seq %llu\n"
+	   "%llu hits and %llu misses\n", 
 	   count, limit, next_sequence,
 	   hits, misses);
   }

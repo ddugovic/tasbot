@@ -9,6 +9,9 @@
 #include "../cc-lib/arcfour.h"
 #include "util.h"
 
+// Right now, segment into 10-input chunks.
+static const int MOTIF_SIZE = 10;
+
 struct Motifs {
   // Create empty.
   Motifs();
@@ -89,7 +92,7 @@ const vector<uint8> *Motifs::RandomWeightedMotifNotIn(const Container &c) {
   double totalweight = 0.0;
   for (Weighted::const_iterator it = motifs.begin();
        it != motifs.end(); ++it) {
-    if (c.find(it->first) == c.end()) {
+    if (!c.count(it->first)) {
       totalweight += it->second.weight;
     }
   }
@@ -99,7 +102,7 @@ const vector<uint8> *Motifs::RandomWeightedMotifNotIn(const Container &c) {
 
   for (Weighted::const_iterator it = motifs.begin();
        it != motifs.end(); ++it) {
-    if (c.find(it->first) == c.end()) {
+    if (!c.count(it->first)) {
       if (sample <= it->second.weight) {
         return &it->first;
       }
@@ -109,6 +112,5 @@ const vector<uint8> *Motifs::RandomWeightedMotifNotIn(const Container &c) {
 
   return NULL;
 }
-
 
 #endif

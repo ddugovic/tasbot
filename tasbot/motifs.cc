@@ -66,7 +66,7 @@ Motifs *Motifs::LoadFromFile(const string &filename) {
     // printf("MOTIF: %f | %s\n", d, InputsToString(inputs).c_str());
     mm->motifs.insert(make_pair(inputs, Info(d)));
   }
-  printf("Read %lld motifs from %s.\n", mm->motifs.size(), filename.c_str());
+  printf("Read %zu motifs from %s.\n", mm->motifs.size(), filename.c_str());
 
   return mm;
 }
@@ -80,25 +80,27 @@ void Motifs::SaveToFile(const string &filename) const {
     s += InputsToString(inputs);
     out += s + "\n";
   }
-  // printf("%s\n", out.c_str());
-  printf("Wrote %lld motifs to %s.\n", motifs.size(), filename.c_str());
-  Util::WriteFile(filename, out);
+  if (!Util::WriteFile(filename, out)) {
+    printf("Failed writing %zu motifs to %s.\n", motifs.size(), filename.c_str());
+  } else {
+    printf("Wrote %zu motifs to %s.\n", motifs.size(), filename.c_str());
+  }
 }
 
 void Motifs::AddInputs(const vector<uint8> &inputs) {
-  // Right now, just chunk into 10-input parts.
-  static const int CHUNK_SIZE = 10;
   vector<uint8> current;
 
   for (int i = 0; i < inputs.size(); i++) {
     current.push_back(inputs[i]);
-    if (current.size() == CHUNK_SIZE) {
+    if (current.size() == MOTIF_SIZE) {
       motifs[current].weight += 1.0;
       current.clear();
     }
   }
 
   if (!current.empty()) {
+    while (current.size() < MOTIF_SIZE)
+      current.push_back(current.back());
     motifs[current].weight += 1.0;
   }
 }
@@ -175,7 +177,6 @@ const vector<uint8> &Motifs::RandomWeightedMotifWith(ArcFour *rrc) {
 const vector<uint8> &Motifs::RandomWeightedMotif() {
   return RandomWeightedMotifWith(&rc);
 }
-
 
 static string ShowRange(int lastframe, double val,
 			int thisframe) {

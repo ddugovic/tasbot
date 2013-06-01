@@ -17,10 +17,11 @@ message PlayFunRequest {
 
 message PlayFunResponse {
   optional double immediate_score = 1;
-  optional double best_future_score = 2;
-  optional double worst_future_score = 3;
-  optional double futures_score = 4;
-  repeated double futurescores = 5;
+  optional double normalized_score = 2;
+  optional double best_future_score = 3;
+  optional double worst_future_score = 4;
+  optional double futures_score = 5;
+  repeated double futurescores = 6;
 }
 
 // Given some state and a candidate path, try to find a better path.

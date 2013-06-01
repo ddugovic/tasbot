@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 
+#include "motifs.h"
 #include "tasbot.h"
 #include "fceu/types.h"
 

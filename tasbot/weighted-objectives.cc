@@ -278,19 +278,22 @@ void WeightedObjectives::WeightByExamples(const vector< vector<uint8> >
 
 void WeightedObjectives::SaveSVG(const vector< vector<uint8> > &memories,
 				 const string &filename) const {
-  static const int WIDTH = 2048;
-  static const int HEIGHT = 1204;
+  double xmax = (double)memories.size() * MOTIF_SIZE;
+  static const double SPAN = 50 * ((int)xmax/5000 + 1);
+  static const double WIDTH = xmax * 1.5; // 1024.0
+  static const double HEIGHT = 768.0;
 
-  string out = TextSVG::Header(WIDTH, HEIGHT);
+  // Add slop since other SVG does.
+  string out = TextSVG::Header(WIDTH+12, HEIGHT+12);
 
   ArcFour rc("Zmake colors");
 
-  uint64 skipped = 0;
+  size_t skipped = 0;
   int howmany = 500;
   for (Weighted::const_iterator it = weighted.begin();
        howmany-- && it != weighted.end(); ++it) {
     const vector<int> &obj = it->first;
-    const Info &info = *it->second;
+    // const Info &info = *it->second;
     // All the distinct values this objective takes on, in order.
     vector< vector<uint8> > values = GetUniqueValues(memories, obj);
     // printf("%lld distinct values for %s\n", values.size(),
@@ -342,18 +345,18 @@ void WeightedObjectives::SaveSVG(const vector< vector<uint8> > &memories,
 	out += Coords(WIDTH * xf, HEIGHT * (1.0 - yf)) + " ";
 	numleft = MAXLEN;
       }
-
     }
 
     out += endpolyline;
     out += "</g>\n";
   }
 
-  out += SVGTickmarks(WIDTH, memories.size(), 50.0, 20.0, 12.0);
+  // XXX args?
+  out += SVGTickmarks(WIDTH, memories.size() * MOTIF_SIZE, SPAN, 20.0, 12.0);
 
   out += TextSVG::Footer();
   Util::WriteFile(filename, out);
 
-  printf("Wrote %lld objectives, skipping %lld points, to %s\n", 
+  printf("Wrote %zu objectives, skipping %zu points, to %s\n", 
 	 weighted.size(), skipped, filename.c_str());
 }
