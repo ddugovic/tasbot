@@ -89,19 +89,13 @@ void Motifs::SaveToFile(const string &filename) const {
 
 void Motifs::AddInputs(const vector<uint8> &inputs) {
   vector<uint8> current;
-
-  for (int i = 0; i < inputs.size(); i++) {
-    current.push_back(inputs[i]);
+  for (vector<uint8>::const_iterator it = inputs.begin() + FASTFORWARD;
+       it != inputs.end(); it++) {
+    current.push_back(*it);
     if (current.size() == MOTIF_SIZE) {
       motifs[current].weight += 1.0;
-      current.clear();
+      current = vector<uint8>(current.begin() + 1, current.end());
     }
-  }
-
-  if (!current.empty()) {
-    while (current.size() < MOTIF_SIZE)
-      current.push_back(current.back());
-    motifs[current].weight += 1.0;
   }
 }
 

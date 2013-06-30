@@ -2,7 +2,7 @@
 
 string SVGTickmarks(double width, double maxx, double span,
 		    double tickheight, double tickfont) {
-  printf("SVGTickmarks %f %f %f\n", width, maxx, span);
+  printf("SVGTickmarks %.3f %.3f %.3f\n", width, maxx, span);
   string out;
   bool longone = true;
   for (double x = 0.0; x < maxx; x += span) {

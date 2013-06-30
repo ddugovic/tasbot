@@ -40,11 +40,13 @@ message TryImproveRequest {
     // like pressing LEFT when it says RIGHT. Fixed
     // number of iterations up front; remainder of
     // iterations apply the strategy to subsequences.
-    OPPOSITES = 1;
+    DUALIZE = 1;
     // Try removing button presses from the input.
-    ABLATION = 2;
+    ABLATE = 2;
     // Chop out sections of the input.
     CHOP = 3;
+    // Shuffle sections of the input.
+    SHUFFLE = 4;
     // expansion, hill climbing ...
   }
 

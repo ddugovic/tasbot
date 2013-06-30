@@ -74,16 +74,19 @@ static void GenerateNthSlices(int divisor, int num,
 static void GenerateOccasional(int stride, int offsets, int num,
 			       const vector< vector<uint8> > &memories,
 			       Objective *obj) {
+  int span = stride / offsets;
+  int start = rand() % span;
   for (int off = 0; off < offsets; off++) {
     vector<int> look;
-    // Consider starting at various places throughout the first stide?
-    for (int start = off; start < memories.size(); start += stride) {
-      look.push_back(start);
+    // Consider starting at various places throughout the first stride?
+    for (int frame = start; frame < memories.size(); frame += stride) {
+      look.push_back(frame);
     }
     printf("For occasional @%d (every %d):\n", off, stride);
     for (int i = 0; i < num; i++) {
       obj->EnumerateFull(look, PrintAndSave, 1, off * 0xF00D + i);
     }
+    start += span;
   }
 }
 
@@ -100,28 +103,31 @@ static void MakeObjectives(const vector< vector<uint8> > &memories) {
   // TODO: In Mario, all 50 appear to be effectively the same
   // when graphed. Are they all equivalent, and should we be
   // accounting for that e.g. in weighting or deduplication?
-  for (int i = 0; i < 50; i++) // was 10
+  for (int i = 0; i < 50; i++)
     obj.EnumerateFullAll(PrintAndSave, 1, i);
 
   // XXX Not sure how I feel about these, based on the
   // graphics. They are VERY noisy.
 
-  // Next, generate objectives for each tenth of the game.
-  GenerateNthSlices(10, 3, memories, &obj);
+  // Next, generate objectives for each slice of the game:
+  // each half, third, fourth, etc.
+  for (int divisor=2; divisor<=10; divisor++)
+    GenerateNthSlices(divisor, 3, memories, &obj);
+
+  // And for each 1/50th.
+  GenerateNthSlices(50, 2, memories, &obj);
 
   // And for each 1/100th.
-  // GenerateNthSlices(100, 1, memories, &obj);
+  GenerateNthSlices(100, 1, memories, &obj);
 
-  // Now, for individual frames spread throughout the
-  // whole movie.
+  // Now, for individual frames spread throughout the whole movie.
   // This one looks great.
-  GenerateOccasional(100, 10, 10, memories, &obj);
-  // was 5,2
+  GenerateOccasional(100, 10, 20, memories, &obj);
 
   GenerateOccasional(250, 10, 10, memories, &obj);
 
   // This one looks okay; noisy at times.
-  GenerateOccasional(1000, 10, 1, memories, &obj);
+  GenerateOccasional(1000, 10, 5, memories, &obj);
 
   // Weight them. Currently this is just removing duplicates.
   printf("There are %zu objectives\n", objectives->size());
@@ -148,12 +154,12 @@ int main(int argc, char *argv[]) {
   // which we really should ignore for building an objective function.
   // So skip until there's a button press in the movie.
   size_t start = 0;
-
   printf("Skipping frames without argument.\n");
-  bool saw_input = false;
-  while ((start < FASTFORWARD || !saw_input) && 
-	 start < movie.size()) {
-    if (movie[start] != 0) saw_input = true;
+  while (start < movie.size() && movie[start] == 0) {
+    Emulator::Step(movie[start]);
+    start++;
+  }
+  while (start < FASTFORWARD && start < movie.size()) {
     Emulator::Step(movie[start]);
     start++;
   }

@@ -2,6 +2,7 @@
 #include "weighted-objectives.h"
 
 #include <algorithm>
+#include <cmath>
 #include <set>
 #include <string>
 #include <iostream>
@@ -82,6 +83,10 @@ size_t WeightedObjectives::Size() const {
 }
 
 void WeightedObjectives::Observe(const vector<uint8> &memory) {
+  // Isn't it desirable that particular states' values change
+  // as more observations are made? We're not observing every
+  // frame, so the probability of overfitting is low.
+  //
   // PERF Currently, we just keep a sorted vector for each objective's
   // value at each observation. This is not very efficient. Worse, it
   // may have the undesirable effect that a particular state's value
@@ -90,14 +95,23 @@ void WeightedObjectives::Observe(const vector<uint8> &memory) {
   // distribution).
   for (Weighted::iterator it = weighted.begin();
        it != weighted.end(); ++it) {
+    // PERF Randomly forget observations like a human does.
+    // Assume N=64 should be sufficiently large.
     const vector<int> &obj = it->first;
     Info *info = it->second;
-    info->observations.resize(info->observations.size() + 1);
-    vector<uint8> *cur = &info->observations.back();
-    cur->reserve(obj.size());
+    const size_t size = info->observations.size();
+    if (size < 64) {
+      info->observations.resize(info->observations.size() + 1);
+    }
+    vector<uint8> &cur = size >= 64 ?
+      info->observations[rand() % size] :
+      info->observations.back();
+    cur.clear();
+    cur.reserve(obj.size());
 
-    for (int i = 0; i < obj.size(); i++) {
-      cur->push_back(memory[obj[i]]);
+    for (vector<int>::const_iterator i = obj.begin();
+         i != obj.end(); i++) {
+      cur.push_back(memory[*i]);
     }
 
     // PERF sorted insert is O(n/2); dunno how std::sort
@@ -113,8 +127,11 @@ void WeightedObjectives::Observe(const vector<uint8> &memory) {
 static bool LessObjective(const vector<uint8> &mem1, 
 			  const vector<uint8> &mem2,
 			  const vector<int> &order) {
-  for (int i = 0; i < order.size(); i++) {
-    int p = order[i];
+  // PERF Is faster than Order(mem1, mem2, order) < 0.0 and should
+  // return the same result.
+  for (vector<int>::const_iterator it = order.begin();
+       it != order.end(); ++it) {
+    const int &p = *it;
     if (mem1[p] > mem2[p])
       return false;
     if (mem1[p] < mem2[p])
@@ -125,20 +142,24 @@ static bool LessObjective(const vector<uint8> &mem1,
   return false;
 }
 
-static int Order(const vector<uint8> &mem1, 
+#define RADIX 2
+static double Order(const vector<uint8> &mem1, 
 		 const vector<uint8> &mem2,
 		 const vector<int> &order) {
-  for (vector<int>::const_iterator it = order.begin();
-       it != order.end(); ++it) {
-    int p = *it;
-    if (mem1[p] > mem2[p])
-      return -1;
-    if (mem1[p] < mem2[p])
-      return 1;
+  // TODO: Rather than doing weighted lexicographic comparisons
+  // let each objective function be a weight vector [w0 w1 .. wn]
+  // to dot product with corresponding memory segments.
+  // At search time, weight changes in objective functions by the magnitude
+  // of the change, not just the number that went up or down.
+  // Below is equivalent to weight vector [RADIX^n RADIX^(n-1) .. 1]
+  // for the objective function [0 1 .. n]
+  double val = 0.0;
+  for (vector<int>::const_reverse_iterator it = order.rbegin();
+       it != order.rend(); ++it) {
+    val += (mem2[*it] - mem1[*it]);
+    val /= RADIX;
   }
-
-  // Equal.
-  return 0;
+  return val;
 }
 
 
@@ -163,12 +184,7 @@ double WeightedObjectives::Evaluate(const vector<uint8> &mem1,
        it != weighted.end(); ++it) {
     const vector<int> &objective = it->first;
     const double weight = it->second->weight;
-    switch (Order(mem1, mem2, objective)) {
-    case -1: score -= weight; break;
-    case 1: score += weight; break;
-    case 0:
-    default:;
-    }
+    score += weight * Order(mem1, mem2, objective);
   }
   return score;
 }
@@ -278,10 +294,9 @@ void WeightedObjectives::WeightByExamples(const vector< vector<uint8> >
 
 void WeightedObjectives::SaveSVG(const vector< vector<uint8> > &memories,
 				 const string &filename) const {
-  double xmax = (double)memories.size() * MOTIF_SIZE;
-  static const double SPAN = 50 * ((int)xmax/5000 + 1);
-  static const double WIDTH = xmax * 1.5; // 1024.0
-  static const double HEIGHT = 768.0;
+  const double SPAN = 50;
+  const double WIDTH = memories.size() * 2; // 1024.0
+  const double HEIGHT = 768.0;
 
   // Add slop since other SVG does.
   string out = TextSVG::Header(WIDTH+12, HEIGHT+12);
@@ -295,7 +310,7 @@ void WeightedObjectives::SaveSVG(const vector< vector<uint8> > &memories,
     const vector<int> &obj = it->first;
     // const Info &info = *it->second;
     // All the distinct values this objective takes on, in order.
-    vector< vector<uint8> > values = GetUniqueValues(memories, obj);
+    const vector< vector<uint8> > values = GetUniqueValues(memories, obj);
     // printf("%lld distinct values for %s\n", values.size(),
     // ObjectiveToString(obj).c_str());
 
@@ -318,14 +333,14 @@ void WeightedObjectives::SaveSVG(const vector< vector<uint8> > &memories,
     int numleft = MAXLEN;
     // Fill in points as space separated x,y coords
     int lastvalueindex = -1;
-    for (int i = 0; i < memories.size(); i++) {
-      vector<uint8> now = GetValues(memories[i], obj);
-      int valueindex = GetValueIndex(values, now);
+    for (size_t i = 0; i < memories.size(); i++) {
+      const vector<uint8> now = GetValues(memories[i], obj);
+      const int valueindex = GetValueIndex(values, now);
 
       // Allow drawing horizontal lines without interstitial points.
       if (valueindex == lastvalueindex) {
 	while (i < memories.size() - 1) {
-	  vector<uint8> next = GetValues(memories[i + 1], obj);
+	  const vector<uint8> next = GetValues(memories[i + 1], obj);
 	  int nextvalueindex = GetValueIndex(values, next);
 	  if (nextvalueindex != valueindex)
 	    break;
@@ -335,9 +350,9 @@ void WeightedObjectives::SaveSVG(const vector< vector<uint8> > &memories,
       }
       lastvalueindex = valueindex;
 
-	// Fraction in [0, 1]
-      double yf = (double)valueindex / (double)values.size();
-      double xf = (double)i / (double)memories.size();
+      // Fraction in [0, 1]
+      double yf = (double)valueindex / values.size();
+      double xf = (double)i / memories.size();
       out += Coords(WIDTH * xf, HEIGHT * (1.0 - yf)) + " ";
       if (numleft-- == 0) {
 	out += endpolyline;
@@ -352,7 +367,7 @@ void WeightedObjectives::SaveSVG(const vector< vector<uint8> > &memories,
   }
 
   // XXX args?
-  out += SVGTickmarks(WIDTH, memories.size() * MOTIF_SIZE, SPAN, 20.0, 12.0);
+  out += SVGTickmarks(WIDTH, memories.size() * 5, SPAN, 20.0, 12.0);
 
   out += TextSVG::Footer();
   Util::WriteFile(filename, out);

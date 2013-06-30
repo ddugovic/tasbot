@@ -1,5 +1,3 @@
- TASBOT                                                   4 May 2013
-
  Experimental code for automating the play of NES games.
  This directory contains some false starts and the playfun and learnfun
  algorithms, which original author Tom Murphy VII describes here
@@ -8,13 +6,16 @@
 
  The intended platform is 64-bit GNU/Linux, although mingw-specific
  code is left intact so compiling on Windows should only require
- obtaining dependencies and editing the makefile. Compiling with SDL
- is known to work with the following packages:
+ obtaining dependencies and editing the makefile.
+
+ Compiling with Google protobuf (optional), SDL (optional), and
+ SDL_net (optional) is known to work with the following packages:
+ protobuf-devel 2.3.0-7 or better
  SDL-devel 1.2.10-9 or better
  SDL_net-devel 1.2.7-1 or better
 
- Compiling with protobuf is known to work with the following package:
- protobuf-devel 2.3.0-7 or better
+ Compiling with zlib is known to work with the following package:
+ zlib-devel 1.2.3-29 or better
 
  The fceu subdirectory is the fork of FCEUX. Tom deleted a bunch of
  stuff from it, and made it compile cleanly under 64-bit mingw for
@@ -51,24 +52,12 @@
 
    http://youtu.be/OS75JLwJExk
 
- - Optionally, modify the beginning of the movie to have only a single
-   frame of the "START" button. You don't need to do this, but since
-   the learning (and playing) process begins with the first button
-   press, it may be cleaner training data if it never sees you press
-   START after that, including on the next frame. In most games,
-   having START among the input motifs is an annoyance, because
-   Playfun will pause the game sometimes. (This does sometimes allow
-   it to play better because it can wait when all its futures are
-   bad.) If it's pausing a lot, it probably has no idea what it's
-   doing, anyway. You might consider editing the training data to
-   be cheating. Up to you.
-
  - Modify game.h to set the name of your movie. You can also define
    FASTFORWARD to skip any number of frames (copying them from your
-   movie), like if you want to skip menus. This is obviously cheating.
-   The BASE64 doesn't really matter, but it makes the FM2 files that
-   playfun generates be valid, which avoids warnings in the emulator
-   later.
+   movie), like if you want to skip menus. This is obviously cheating
+   since learnfun and playfun never learn the menus.
+   Playfun's progress files can be replayed using FCEUX, which checks
+   that BASE64 matches the ROM file checksum or displays a warning.
 
  - Rebuild learnfun and playfun.
    They compile in the constants in game.h.
@@ -76,29 +65,25 @@
  - Run ./learnfun to produce an .objectives and .motifs file
    based on your inputs. It also makes some optional SVG files.
 
- - I recommend running Playfun in MARIONET (client/server) mode since
-   single-CPU mode is very slow (you would need to reduce constants
-   like NFUTURES). This means first starting a helper for each logical
-   CPU (this is probably 2x the number of cores, since you probably have
-   hyperthreaded CPUs), then starting a single master:
+ - I recommend running playfun in MARIONET (client/server) mode which
+   parallelizes computation to run faster. This means first starting
+   a helper for each logical CPU, then starting a single master:
 
    ./playfun --helper 8000
    ./playfun --helper 8001
    ./playfun --helper 8002
    ./playfun --helper 8003
-   ./playfun --helper 8004
-   ./playfun --helper 8005
-   ./playfun --master 8000 8001 8002 8003 8004 8005
+   ./playfun --master 8000 8001 8002 8003
 
    These all output ANSI colors and escape sequences to draw progress
    bars, so you will want to run them in different console windows.
    Note that MARIONET is vulnerable to remote exploitation (it loads
    savestates, assuming they're valid). Don't run it on open networks.
 
- - Playfun will run forever. Every 100 frames it writes an .fm2 file
-   (*-playfun-futures-progress.fm2) which you can play in FCEUX to see
-   what it's doing! Note that playfun is slow; on a 2-core AMD Turion,
-   it takes 5 minutes to generate 1 second (60 frames) of gameplay.
+ - Playfun will run forever. Every 50 frames it writes an .fm2 file
+   (*-playfun-*.fm2) which you can replay in FCEUX to watch it play!
+   Note that playfun is slow; on a 2-core AMD Turion, it takes about
+   5 minutes to generate 1 second (60 frames) of gameplay.
 
  - Read TODO for ideas on how to improve this program. To date I've
    mainly focused on refactors to accomodate future changes and to

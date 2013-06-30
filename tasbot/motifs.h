@@ -5,8 +5,8 @@
 #include <vector>
 #include <map>
 
-#include "tasbot.h"
 #include "../cc-lib/arcfour.h"
+#include "game.h"
 #include "util.h"
 
 // Right now, segment into 10-input chunks.

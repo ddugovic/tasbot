@@ -8,27 +8,12 @@
 #include "../cc-lib/base/stringprintf.h"
 
 #ifdef __GNUC__
-#include <ext/hash_map>
-#include <ext/hash_set>
+#include <tr1/unordered_map>
+#include <tr1/unordered_set>
+using std::tr1::hash;
 #else
 #include <hash_map>
 #include <hash_set>
-#endif
-
-#ifdef __GNUC__
-namespace std {
-using namespace __gnu_cxx;
-}
-
-// Needed on cygwin, at least. Maybe not all gnuc?
-namespace __gnu_cxx {
-template<>
-struct hash< unsigned long long > {
-  size_t operator()( const unsigned long long& x ) const {
-    return x;
-  }
-};
-}
 #endif
 
 // TODO: Use good logging package.

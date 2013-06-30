@@ -9,13 +9,14 @@ all: playfun tasbot emu_test objective_test learnfun weighted-objectives_test sh
 CXXFLAGS=-Wall -Wno-sign-compare -I/usr/local/include
 CXX=g++
 CC=g++
-SDLARCH=x64
 
-# If you don't have SDL, you can leave these out, and maybe it still works.
+# If you don't have protobuf, SDL and SDL_net, you can comment these out.
 CCNETWORKING=-DMARIONET -I /usr/include/SDL
-#CCNETWORKING=-I /usr/include/SDL
-LINKSDL=-lSDL -lSDL_net
-LINKNETWORKING=$(LINKSDL) -lprotobuf -lpthread
+LINKNETWORKING=-lSDL -lSDL_net -lprotobuf -lpthread
+PROTOC=protoc
+PROTO_OBJECTS=marionet.pb.o
+MARIONET_OBJECTS=$(PROTO_OBJECTS) netutil.o
+SDLARCH=x64
 
 #PROFILE=-pg -g
 #PROFILE=-g
@@ -36,7 +37,6 @@ DEFINES=-DPSS_STYLE=1 -DDUMMY_UI -DNOEMUCACHE
 #DEFINES=-DPSS_STYLE=1 -DDUMMY_UI
 
 CPPFLAGS= $(CCNETWORKING) $(DEFINES) -m64 $(INCLUDES) $(PROFILE) $(OPT)
-#CPPFLAGS= $(DEFINES) -m64 $(INCLUDES) $(PROFILE) $(OPT)
 
 #LFLAGS=$(LINKNETWORKING) -lz $(PROFILE) $(LOPT) -Wl,--subsystem,console
 LFLAGS=$(LINKNETWORKING) -lz $(PROFILE) $(LOPT)
@@ -60,10 +60,6 @@ UTILSOBJECTS=fceu/utils/ConvertUTF.o fceu/utils/general.o fceu/utils/memory.o fc
 
 EMUOBJECTS=$(FCEUOBJECTS) $(MAPPEROBJECTS) $(UTILSOBJECTS) $(PALLETESOBJECTS) $(BOARDSOBJECTS) $(INPUTOBJECTS) $(DRIVERS_COMMON_OBJECTS)
 
-PROTOC=protoc
-PROTO_OBJECTS=marionet.pb.o
-
-MARIONET_OBJECTS=$(PROTO_OBJECTS) netutil.o
 TASBOT_OBJECTS=$(MARIONET_OBJECTS) headless-driver.o config.o simplefm2.o emulator.o basis-util.o objective.o weighted-objectives.o motifs.o util.o
 
 %.o: %.cc %.cpp %.h
