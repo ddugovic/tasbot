@@ -11,7 +11,7 @@
 #include <set>
 #include <cmath>
 
-#include <unistd.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <string.h>
 #include <errno.h>
@@ -164,7 +164,7 @@ static void SaveFuturesHTML(const vector<Future> &futures,
 }
 
 struct PlayFun {
-  PlayFun() : watermark(0), log(NULL), rc("playfun") {
+  PlayFun(size_t frame) : fastforward(frame), watermark(0), log(NULL), rc("playfun") {
     Emulator::Initialize(GAME ".nes");
     objectives = WeightedObjectives::LoadFromFile(GAME ".objectives");
     CHECK(objectives);
@@ -187,7 +187,7 @@ struct PlayFun {
       watermark++;
       start++;
     }
-    while (start < FASTFORWARD && start < solution.size()) {
+    while (start < fastforward && start < solution.size()) {
       Commit(solution[start], "warmup");
       watermark++;
       start++;
@@ -223,6 +223,7 @@ struct PlayFun {
 
   // Index below which we should not backtrack (because it
   // contains pre-game menu stuff, for example).
+  const size_t fastforward;
   size_t watermark;
 
   // Number of real futures to push forward.
@@ -268,10 +269,10 @@ struct PlayFun {
     Emulator::CachingStep(input);
     movie.push_back(input);
     subtitles.push_back(message);
-    if (movie.size() < watermark)
+    if (movie.size() < watermark || movie.size() < fastforward)
       return;
 
-    size_t inputs = movie.size() - FASTFORWARD;
+    size_t inputs = movie.size() - fastforward;
     if (inputs % CHECKPOINT_EVERY == 0) {
       vector<uint8> savestate;
       Emulator::Save(&savestate);
@@ -1666,38 +1667,52 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "SDL initialized OK.\n");
   #endif
 
-  PlayFun pf;
-
+  size_t fastforward = FASTFORWARD;
   #ifdef MARIONET
-  if (argc >= 2) {
-    if (0 == strcmp(argv[1], "--helper")) {
-      if (argc < 3) {
-	fprintf(stderr, "Need one port number after --helper.\n");
-	abort();
+  static struct option long_options[] = {
+    {"fastforward", required_argument, NULL, 'f'},
+    {"helper", required_argument, NULL, 'h'},
+    {"master", required_argument, NULL, 'm'}
+  };
+  char ch;
+  while ((ch = getopt_long(argc, argv, "", long_options, NULL)) != -1) {
+    switch (ch) {
+    case 'f':
+      fastforward = atoi(optarg);
+      break;
+    case 'h':
+      {
+        PlayFun pf(fastforward);
+        int port = atoi(optarg);
+        if (!port) {
+          fprintf(stderr, "Expected a port number after --helper.\n");
+          abort();
+        }
+        fprintf(stderr, "Starting helper on port %d...\n", port);
+        pf.Helper(port);
       }
-      int port = atoi(argv[2]);
-      fprintf(stderr, "Starting helper on port %d...\n", port);
-      pf.Helper(port);
       fprintf(stderr, "helper returned?\n");
-    } else if (0 == strcmp(argv[1], "--master")) {
-      vector<int> helpers;
-      for (int i = 2; i < argc; i++) {
-	int hp = atoi(argv[i]);
-	if (!hp) {
-	  fprintf(stderr,
-		  "Expected a series of helper ports after --master.\n");
-	  abort();
-	}
-	helpers.push_back(hp);
+      break;
+    case 'm':
+      {
+        PlayFun pf(fastforward);
+        vector<int> helpers;
+        int hp = atoi(optarg);
+        if (!hp) {
+          fprintf(stderr, "Expected port numbers after --master.\n");
+          abort();
+        }
+        for ( ; hp && optind < argc; optind++) {
+          helpers.push_back(hp);
+          hp = atoi(argv[optind]);
+        }
+        pf.Master(helpers);
       }
-      pf.Master(helpers);
       fprintf(stderr, "master returned?\n");
     }
-  } else {
-    vector<int> empty;
-    pf.Master(empty);
   }
   #else
+  PlayFun pf(fastforward);
   vector<int> nobody;
   pf.Master(nobody);
   #endif
