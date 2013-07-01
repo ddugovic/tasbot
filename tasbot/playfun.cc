@@ -1667,6 +1667,8 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "SDL initialized OK.\n");
   #endif
 
+  int port;
+  vector<int> helpers;
   size_t fastforward = FASTFORWARD;
   #ifdef MARIONET
   static struct option long_options[] = {
@@ -1681,41 +1683,38 @@ int main(int argc, char *argv[]) {
       fastforward = atoi(optarg);
       break;
     case 'h':
-      {
-        PlayFun pf(fastforward);
-        int port = atoi(optarg);
-        if (!port) {
-          fprintf(stderr, "Expected a port number after --helper.\n");
-          abort();
-        }
-        fprintf(stderr, "Starting helper on port %d...\n", port);
-        pf.Helper(port);
+      port = atoi(optarg);
+      if (!port) {
+        fprintf(stderr, "Expected a port number after --helper.\n");
+        abort();
       }
-      fprintf(stderr, "helper returned?\n");
       break;
     case 'm':
-      {
-        PlayFun pf(fastforward);
-        vector<int> helpers;
-        int hp = atoi(optarg);
-        if (!hp) {
-          fprintf(stderr, "Expected port numbers after --master.\n");
-          abort();
-        }
-        for ( ; hp && optind < argc; optind++) {
-          helpers.push_back(hp);
-          hp = atoi(argv[optind]);
-        }
-        pf.Master(helpers);
+      port = atoi(optarg);
+      if (!port) {
+        fprintf(stderr, "Expected port numbers after --master.\n");
+        abort();
       }
-      fprintf(stderr, "master returned?\n");
+      helpers.push_back(port);
+      for ( ; optind < argc; optind++) {
+        port = atoi(argv[optind]);
+        if (!port) {
+          break;
+        }
+        helpers.push_back(port);
+      }
+      break;
     }
   }
-  #else
-  PlayFun pf(fastforward);
-  vector<int> nobody;
-  pf.Master(nobody);
   #endif
+
+  PlayFun pf(fastforward);
+  if (helpers.empty()) {
+    fprintf(stderr, "Starting helper on port %d...\n", port);
+    pf.Helper(port);
+  } else {
+    pf.Master(helpers);
+  }
 
   Emulator::Shutdown();
 
