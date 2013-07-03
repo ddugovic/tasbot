@@ -4,8 +4,16 @@
 
 #include "../cc-lib/util.h"
 #include "../cc-lib/heap.h"
-
 #include "../cc-lib/base/stringprintf.h"
+
+#include "fceu/drivers/common/args.h"
+#include "fceu/utils/md5.h"
+#include "fceu/utils/xstring.h"
+#include "fceu/driver.h"
+#include "fceu/fceu.h"
+#include "fceu/state.h"
+#include "fceu/types.h"
+#include "fceu/version.h"
 
 #ifdef __GNUC__
 #include <tr1/unordered_map>

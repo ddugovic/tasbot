@@ -13,12 +13,6 @@ using tr1::unordered_map;
 #endif
 
 #include "config.h"
-#include "fceu/driver.h"
-#include "fceu/fceu.h"
-#include "fceu/types.h"
-#include "fceu/utils/md5.h"
-#include "fceu/version.h"
-#include "fceu/state.h"
 
 #include "tasbot.h"
 #include "../cc-lib/city/city.h"
@@ -175,20 +169,6 @@ static StateCache *cache = NULL;
 void Emulator::GetMemory(vector<uint8> *mem) {
   mem->resize(0x800);
   memcpy(&((*mem)[0]), RAM, 0x800);
-}
-
-uint64 Emulator::RamChecksum() {
-  md5_context ctx;
-  md5_starts(&ctx);
-  md5_update(&ctx, RAM, 0x800);
-  uint8 digest[16];
-  md5_finish(&ctx, digest);
-  uint64 res = 0;
-  for (int i = 0; i < 8; i++) {
-    res <<= 8;
-    res |= 255 & digest[i];
-  }
-  return res;
 }
 
 /**

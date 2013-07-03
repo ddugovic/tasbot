@@ -21,15 +21,9 @@
 
 #include "tasbot.h"
 
-#include "fceu/utils/md5.h"
 #include "config.h"
-#include "fceu/driver.h"
-#include "fceu/drivers/common/args.h"
-#include "fceu/state.h"
 #include "basis-util.h"
 #include "emulator.h"
-#include "fceu/fceu.h"
-#include "fceu/types.h"
 #include "simplefm2.h"
 #include "weighted-objectives.h"
 #include "motifs.h"
@@ -166,6 +160,9 @@ static void SaveFuturesHTML(const vector<Future> &futures,
 struct PlayFun {
   PlayFun(size_t frame) : fastforward(frame), watermark(0), log(NULL), rc("playfun") {
     Emulator::Initialize(GAME ".nes");
+    romchecksum = GameInfo->MD5;
+    fprintf(stderr, "Loaded ROM checksum %s\n",
+	    BytesToString(romchecksum.data, MD5DATA::size).c_str());
     objectives = WeightedObjectives::LoadFromFile(GAME ".objectives");
     CHECK(objectives);
     fprintf(stderr, "Loaded %zu objective functions\n", objectives->Size());
@@ -220,6 +217,8 @@ struct PlayFun {
     Checkpoint() : movenum(0) {}
   };
   vector<Checkpoint> checkpoints;
+
+  MD5DATA romchecksum;
 
   // Index below which we should not backtrack (because it
   // contains pre-game menu stuff, for example).
@@ -1588,7 +1587,7 @@ struct PlayFun {
       SimpleFM2::WriteInputsWithSubtitles(
 	  StringPrintf(GAME "-playfun-backtrack-%llu.fm2", iters),
 	  GAME ".nes",
-	  BASE64,
+	  romchecksum,
 	  movie,
 	  subtitles);
 
@@ -1609,7 +1608,7 @@ struct PlayFun {
     printf("                     - writing movie -\n");
     SimpleFM2::WriteInputsWithSubtitles(StringPrintf(GAME "-playfun-%llu.fm2", iters),
 	GAME ".nes",
-	BASE64,
+	romchecksum,
 	movie,
 	subtitles);
     Emulator::PrintCacheStats();
@@ -1626,7 +1625,7 @@ struct PlayFun {
       fmovie.insert(fmovie.end(), inputs.begin(), inputs.end());
       SimpleFM2::WriteInputs(StringPrintf(GAME "-playfun-future-%d.fm2", i),
 	  GAME ".nes",
-	  BASE64,
+	  romchecksum,
 	  fmovie);
       fmovie.resize(size);
     }

@@ -1,9 +1,6 @@
 
 #include "simplefm2.h"
 
-#include "../cc-lib/util.h"
-#include "tasbot.h"
-
 using namespace std;
 
 vector<uint8> SimpleFM2::ReadInputs(const string &filename) {
@@ -47,7 +44,7 @@ vector<uint8> SimpleFM2::ReadInputs(const string &filename) {
 
 void SimpleFM2::WriteInputs(const string &outputfile,
 			    const string &romfilename,
-			    const string &romchecksum,
+			    const MD5DATA &romchecksum,
 			    const vector<uint8> &inputs) {
   vector<string> empty;
   WriteInputsWithSubtitles(outputfile, romfilename, romchecksum,
@@ -57,7 +54,7 @@ void SimpleFM2::WriteInputs(const string &outputfile,
 
 void SimpleFM2::WriteInputsWithSubtitles(const string &outputfile,
 					 const string &romfilename,
-					 const string &romchecksum,
+					 const MD5DATA &romchecksum,
 					 const vector<uint8> &inputs,
 					 const vector<string> &subtitles) {
   // XXX Create one of these by hashing inputs.
@@ -81,7 +78,7 @@ void SimpleFM2::WriteInputsWithSubtitles(const string &outputfile,
 	  "FDS 1\n"
 	  "comment author tasbot-simplefm2\n",
 	  romfilename.c_str(),
-	  romchecksum.c_str(),
+	  BytesToString(romchecksum.data, MD5DATA::size).c_str(),
 	  fakeguid.c_str());
 
   const string *last = NULL;
