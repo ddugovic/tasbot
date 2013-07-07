@@ -11,19 +11,12 @@
 
 #include "tasbot.h"
 
-#include "fceu/utils/md5.h"
 #include "config.h"
-#include "fceu/driver.h"
-#include "fceu/drivers/common/args.h"
-#include "fceu/state.h"
 #include "basis-util.h"
 #include "emulator.h"
-#include "fceu/fceu.h"
-#include "fceu/types.h"
 #include "simplefm2.h"
 #include "objective.h"
 #include "weighted-objectives.h"
-#include "game.h"
 
 static void SaveMemory(vector< vector<uint8> > *memories) {
   memories->resize(memories->size() + 1);
@@ -75,8 +68,9 @@ struct MemSpan {
 };
 
 int main(int argc, char *argv[]) {
-  Emulator::Initialize(GAME ".nes");
-  vector<uint8> movie = SimpleFM2::ReadInputs(MOVIE);
+  Config config(argc, argv);
+  Emulator::Initialize(config);
+  vector<uint8> movie = SimpleFM2::ReadInputs(config.movie);
 
   vector< vector<uint8> > memories;
   memories.reserve(movie.size() + 1);
@@ -88,7 +82,7 @@ int main(int argc, char *argv[]) {
 
   if (argc == 1) {
     printf("Skipping frames without argument.\n");
-    while (start < FASTFORWARD && start < movie.size()) {
+    while (start < config.fastforward && start < movie.size()) {
       Emulator::Step(movie[start]);
       start++;
     }
@@ -114,7 +108,7 @@ int main(int argc, char *argv[]) {
     printf("Recorded %ld memories.\n", memories.size());
 
 
-    WeightedObjectives *objectives = WeightedObjectives::LoadFromFile(GAME ".objectives");
+    WeightedObjectives *objectives = WeightedObjectives::LoadFromFile(config.game+ ".objectives");
     CHECK(objectives);
 
 #if 0

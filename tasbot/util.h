@@ -3,14 +3,24 @@
 #ifndef __TASBOT_UTIL_H
 #define __TASBOT_UTIL_H
 
-#include <algorithm>
-#include <deque>
-#include <vector>
-#include <string>
-#include "time.h"
+#include "../cc-lib/base/stringprintf.h"
+#include "../cc-lib/city/city.h"
+#include "../cc-lib/util.h"
+#include "../cc-lib/arcfour.h"
+#include "../cc-lib/heap.h"
+#include "../cc-lib/textsvg.h"
+
+#include "fceu/drivers/common/args.h"
+#include "fceu/utils/md5.h"
+#include "fceu/utils/xstring.h"
+#include "fceu/driver.h"
+#include "fceu/fceu.h"
+#include "fceu/state.h"
+#include "fceu/types.h"
+#include "fceu/version.h"
 
 #include "tasbot.h"
-#include "../cc-lib/arcfour.h"
+#include "time.h"
 
 #define ANSI_RESET "\x1B[0m"
 #define ANSI_GREY "\x1B[30m"

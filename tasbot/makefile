@@ -1,9 +1,8 @@
 # Makefile made by tom7.
 default: playfun learnfun showfun
 # tasbot
-# emu_test
 
-all: playfun tasbot emu_test objective_test learnfun weighted-objectives_test showfun
+all: playfun objective_test learnfun weighted-objectives_test showfun tasbot
 
 #CXXFLAGS=-Wall -Wno-sign-compare -I/usr/local/include -fno-strict-aliasing
 CXXFLAGS=-Wall -Wno-sign-compare -I/usr/local/include
@@ -83,22 +82,18 @@ playfun : $(OBJECTS) playfun.o
 showfun : $(OBJECTS) showfun.o
 	$(CXX) $^ -o $@ $(LFLAGS)
 
-emu_test : $(OBJECTS) emu_test.o
-	$(CXX) $^ -o $@ $(LFLAGS)
-
 objective_test : $(OBJECTS) objective_test.o
 	$(CXX) $^ -o $@ $(LFLAGS)
 
 weighted-objectives_test : $(OBJECTS) weighted-objectives_test.o
 	$(CXX) $^ -o $@ $(LFLAGS)
 
-test : emu_test objective_test weighted-objectives_test
-	time ./emu_test
+test : objective_test weighted-objectives_test
 	time ./objective_test
 	time ./weighted-objectives_test
 
 clean :
-	rm -f learnfun playfun showfun tasbot *_test $(OBJECTS) tasbot.o learnfun.o playfun.o showfun.o emu_test.o objective.o objective_test.o weighted-objectives.o weighted-objectives_test.o gmon.out
+	rm -f learnfun playfun showfun tasbot *_test $(OBJECTS) tasbot.o learnfun.o playfun.o showfun.o objective.o objective_test.o weighted-objectives.o weighted-objectives_test.o gmon.out
 
 veryclean : clean cleantas
 

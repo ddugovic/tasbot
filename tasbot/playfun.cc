@@ -11,10 +11,7 @@
 #include <set>
 #include <cmath>
 
-#include <getopt.h>
 #include <sys/types.h>
-#include <string.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -27,17 +24,11 @@
 #include "simplefm2.h"
 #include "weighted-objectives.h"
 #include "motifs.h"
-#include "../cc-lib/arcfour.h"
 #include "util.h"
-#include "../cc-lib/textsvg.h"
-#include "game.h"
 
 #ifdef MARIONET
-#include "SDL.h"
-#include "SDL_net.h"
 #include "marionet.pb.h"
 #include "netutil.h"
-using ::google::protobuf::Message;
 #endif
 
 // This is the factor that determines how quickly a motif changes
@@ -158,16 +149,13 @@ static void SaveFuturesHTML(const vector<Future> &futures,
 }
 
 struct PlayFun {
-  PlayFun(size_t frame) : fastforward(frame), watermark(0), log(NULL), rc("playfun") {
-    Emulator::Initialize(GAME ".nes");
-    romchecksum = GameInfo->MD5;
-    fprintf(stderr, "Loaded ROM checksum %s\n",
-	    BytesToString(romchecksum.data, MD5DATA::size).c_str());
-    objectives = WeightedObjectives::LoadFromFile(GAME ".objectives");
+  PlayFun(Config config) : config(config), watermark(0), log(NULL), rc("playfun") {
+    Emulator::Initialize(config);
+    objectives = WeightedObjectives::LoadFromFile((config.game+ ".objectives").c_str());
     CHECK(objectives);
     fprintf(stderr, "Loaded %zu objective functions\n", objectives->Size());
 
-    motifs = Motifs::LoadFromFile(GAME ".motifs");
+    motifs = Motifs::LoadFromFile((config.game+ ".motifs").c_str());
     CHECK(motifs);
 
     Emulator::ResetCache(100000, 10000);
@@ -176,7 +164,7 @@ struct PlayFun {
 
     // PERF basis?
 
-    solution = SimpleFM2::ReadInputs(MOVIE);
+    solution = SimpleFM2::ReadInputs(config.movie.c_str());
 
     size_t start = 0;
     while (solution[start] == 0 && start < solution.size()) {
@@ -184,7 +172,7 @@ struct PlayFun {
       watermark++;
       start++;
     }
-    while (start < fastforward && start < solution.size()) {
+    while (start < config.fastforward && start < solution.size()) {
       Commit(solution[start], "warmup");
       watermark++;
       start++;
@@ -218,11 +206,9 @@ struct PlayFun {
   };
   vector<Checkpoint> checkpoints;
 
-  MD5DATA romchecksum;
-
   // Index below which we should not backtrack (because it
   // contains pre-game menu stuff, for example).
-  const size_t fastforward;
+  Config config;
   size_t watermark;
 
   // Number of real futures to push forward.
@@ -268,10 +254,10 @@ struct PlayFun {
     Emulator::CachingStep(input);
     movie.push_back(input);
     subtitles.push_back(message);
-    if (movie.size() < watermark || movie.size() < fastforward)
+    if (movie.size() < watermark || movie.size() < config.fastforward)
       return;
 
-    size_t inputs = movie.size() - fastforward;
+    size_t inputs = movie.size() - config.fastforward;
     if (inputs % CHECKPOINT_EVERY == 0) {
       vector<uint8> savestate;
       Emulator::Save(&savestate);
@@ -319,6 +305,7 @@ struct PlayFun {
   }
 
   #ifdef MARIONET
+  typedef ::google::protobuf::Message Message;
   static void ReadBytesFromProto(const string &pf, vector<uint8> *bytes) {
     // PERF iterators.
     for (int i = 0; i < pf.size(); i++) {
@@ -1166,18 +1153,19 @@ struct PlayFun {
     // XXX
     ports_ = helpers;
 
-    log = fopen(GAME "-log.html", "w");
+    log = fopen((config.game+ "-log.html").c_str(), "w");
     CHECK(log != NULL);
     fprintf(log,
 	    "<!DOCTYPE html>\n"
 	    "<link rel=\"stylesheet\" href=\"log.css\" />\n"
-	    "<h1>" GAME " started at %s %s.</h1>\n",
+	    "<h1>%s started at %s %s.</h1>\n",
+	    config.game.c_str(),
 	    DateString(time(NULL)).c_str(),
 	    TimeString(time(NULL)).c_str());
     fflush(log);
 
     fprintf(stderr, "[MASTER] Beginning "
-	    ANSI_YELLOW GAME ANSI_RESET ".\n");
+	    ANSI_YELLOW "%s" ANSI_RESET ".\n", config.game.c_str());
 
     // This version of the algorithm looks like this. At some point in
     // time, we have the set of motifs we might play next. We'll
@@ -1585,9 +1573,9 @@ struct PlayFun {
 
       fprintf(stderr, "Write improvement movie.\n");
       SimpleFM2::WriteInputsWithSubtitles(
-	  StringPrintf(GAME "-playfun-backtrack-%llu.fm2", iters),
-	  GAME ".nes",
-	  romchecksum,
+	  StringPrintf((config.game+ "-playfun-backtrack-%llu.fm2").c_str(), iters),
+	  (config.game+ ".nes").c_str(),
+	  config,
 	  movie,
 	  subtitles);
 
@@ -1606,9 +1594,9 @@ struct PlayFun {
 
   void SaveMovie(uint64 &iters) {
     printf("                     - writing movie -\n");
-    SimpleFM2::WriteInputsWithSubtitles(StringPrintf(GAME "-playfun-%llu.fm2", iters),
-	GAME ".nes",
-	romchecksum,
+    SimpleFM2::WriteInputsWithSubtitles(StringPrintf((config.game+ "-playfun-%llu.fm2").c_str(), iters),
+	(config.game+ ".nes").c_str(),
+	config,
 	movie,
 	subtitles);
     Emulator::PrintCacheStats();
@@ -1616,24 +1604,24 @@ struct PlayFun {
 
   void SaveDiagnostics(const vector<Future> &futures) {
     printf("                     - writing diagnostics -\n");
-    SaveFuturesHTML(futures, GAME "-playfun-futures.html");
+    SaveFuturesHTML(futures, (config.game+ "-playfun-futures.html").c_str());
     #ifdef DEBUGFUTURES
     vector<uint8> fmovie = movie;
     const size_t size = fmovie.size();
     for (int i = 0; i < futures.size(); i++) {
       const vector<uint8> &inputs = futures[i].inputs;
       fmovie.insert(fmovie.end(), inputs.begin(), inputs.end());
-      SimpleFM2::WriteInputs(StringPrintf(GAME "-playfun-future-%d.fm2", i),
-	  GAME ".nes",
-	  romchecksum,
+      SimpleFM2::WriteInputs(StringPrintf((config.game+ "-playfun-future-%d.fm2").c_str(), i),
+	  (config.game+ ".nes").c_str(),
+	  config,
 	  fmovie);
       fmovie.resize(size);
     }
     printf("Wrote %zu movie(s).\n", futures.size() + 1);
     #endif
-    SaveDistributionSVG(movie.size(), distributions, GAME "-playfun-scores.svg");
-    objectives->SaveSVG(memories, GAME "-playfun-futures.svg");
-    motifs->SaveHTML(GAME "-playfun-motifs.html");
+    SaveDistributionSVG(movie.size(), distributions, (config.game+ "-playfun-scores.svg").c_str());
+    objectives->SaveSVG(memories, (config.game+ "-playfun-futures.svg").c_str());
+    motifs->SaveHTML((config.game+ "-playfun-motifs.html").c_str());
     printf("                     (wrote)\n");
   }
 
@@ -1666,54 +1654,18 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "SDL initialized OK.\n");
   #endif
 
-  int port;
-  vector<int> helpers;
-  size_t fastforward = FASTFORWARD;
+  Config config(argc, argv);
+  PlayFun pf(config);
   #ifdef MARIONET
-  static struct option long_options[] = {
-    {"fastforward", required_argument, NULL, 'f'},
-    {"helper", required_argument, NULL, 'h'},
-    {"master", required_argument, NULL, 'm'}
-  };
-  char ch;
-  while ((ch = getopt_long(argc, argv, "", long_options, NULL)) != -1) {
-    switch (ch) {
-    case 'f':
-      fastforward = atoi(optarg);
-      break;
-    case 'h':
-      port = atoi(optarg);
-      if (!port) {
-        fprintf(stderr, "Expected a port number after --helper.\n");
-        abort();
-      }
-      break;
-    case 'm':
-      port = atoi(optarg);
-      if (!port) {
-        fprintf(stderr, "Expected port numbers after --master.\n");
-        abort();
-      }
-      helpers.push_back(port);
-      for ( ; optind < argc; optind++) {
-        port = atoi(argv[optind]);
-        if (!port) {
-          break;
-        }
-        helpers.push_back(port);
-      }
-      break;
-    }
-  }
-  #endif
-
-  PlayFun pf(fastforward);
-  if (helpers.empty()) {
-    fprintf(stderr, "Starting helper on port %d...\n", port);
-    pf.Helper(port);
+  if (config.helpers.empty()) {
+    fprintf(stderr, "Starting helper on port %d...\n", config.port);
+    pf.Helper(config.port);
   } else {
-    pf.Master(helpers);
+    pf.Master(config.helpers);
   }
+  #else
+  pf.Master(config.helpers);
+  #endif
 
   Emulator::Shutdown();
 

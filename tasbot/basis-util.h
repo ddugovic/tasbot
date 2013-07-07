@@ -2,10 +2,13 @@
 #ifndef __BASIS_UTIL_H
 #define __BASIS_UTIL_H
 
-#include <vector>
+#include <stdio.h>
 #include <string>
+#include <vector>
 
+#include "../cc-lib/util.h"
 #include "fceu/types.h"
+#include "emulator.h"
 
 using namespace std;
 

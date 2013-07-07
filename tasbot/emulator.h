@@ -9,16 +9,28 @@
 #ifndef __EMULATOR_H
 #define __EMULATOR_H
 
-#include <vector>
+#include <algorithm>
 #include <string>
+#include <vector>
+#include <zlib.h>
+#ifdef __GNUC__
+#include <tr1/unordered_map>
+#include <tr1/unordered_set>
+using std::tr1::unordered_map;
+#else
+#include <hash_map>
+#include <hash_set>
+#endif
 
-#include "fceu/types.h"
+#include "config.h"
+#include "tasbot.h"
+#include "util.h"
 
 using namespace std;
 
 struct Emulator {
   // Returns false upon error. Only initialize once.
-  static bool Initialize(const string &romfile);
+  static bool Initialize(Config &config);
   // Calls some internal FCEUX stuff, probably not necessary.
   static void Shutdown();
 
@@ -69,6 +81,5 @@ struct Emulator {
   static void SaveEx(vector<uint8> *out, const vector<uint8> *basis);
   static void LoadEx(vector<uint8> *in, const vector<uint8> *basis);
 };
-
 
 #endif

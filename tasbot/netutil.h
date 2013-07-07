@@ -5,14 +5,14 @@
 #include <vector>
 #include <string>
 
-#include "tasbot.h"
-
+#include "SDL.h"
 #include "SDL_net.h"
 #ifndef __GNUC__
 // for getlasterror, etc.
 #include "SDL_net/SDLnetsys.h"
 #endif
 #include "marionet.pb.h"
+#include "tasbot.h"
 #include "util.h"
 #include "errno.h"
 

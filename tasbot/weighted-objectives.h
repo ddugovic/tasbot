@@ -4,13 +4,23 @@
 #ifndef __WEIGHTED_OBJECTIVES_H
 #define __WEIGHTED_OBJECTIVES_H
 
+#include <algorithm>
+#include <cmath>
+#include <iostream>
 #include <map>
-#include <vector>
+#include <set>
+#include <sstream>
 #include <string>
+#include <vector>
 
+#include "../cc-lib/arcfour.h"
+#include "../cc-lib/textsvg.h"
+#include "fceu/types.h"
 #include "motifs.h"
 #include "tasbot.h"
-#include "fceu/types.h"
+#include "util.h"
+
+using namespace std;
 
 struct WeightedObjectives {
   explicit WeightedObjectives(const std::vector< vector<int> > &objs);

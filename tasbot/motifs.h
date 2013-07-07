@@ -2,12 +2,17 @@
 #ifndef __MOTIFS_H
 #define __MOTIFS_H
 
+#include <algorithm>
+#include <iostream>
+#include <set>
+#include <string>
+#include <sstream>
 #include <vector>
-#include <map>
 
-#include "../cc-lib/arcfour.h"
-#include "game.h"
-#include "util.h"
+#include "motifs-style.h"
+#include "simplefm2.h"
+#include "tasbot.h"
+#include "weighted-objectives.h"
 
 // Right now, segment into 10-input chunks.
 static const int MOTIF_SIZE = 10;
@@ -21,7 +26,7 @@ struct Motifs {
   // Does not save checkpoints.
   void SaveToFile(const std::string &filename) const;
 
-  void AddInputs(const vector<uint8> &inputs);
+  void AddInputs(const vector<uint8> &inputs, const size_t &fastforward);
 
   // Returns a motif uniformly at random.
   // Linear time.

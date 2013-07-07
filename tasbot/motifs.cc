@@ -1,19 +1,6 @@
 
 #include "motifs.h"
 
-#include <algorithm>
-#include <set>
-#include <string>
-#include <iostream>
-#include <sstream>
-
-#include "tasbot.h"
-#include "../cc-lib/arcfour.h"
-#include "util.h"
-#include "../cc-lib/util.h"
-#include "simplefm2.h"
-#include "motifs-style.h"
-
 // Cheat by masking inputs to reduce search tree width
 // #define INPUTMASK (~(INPUT_T | INPUT_S))
 #define INPUTMASK 0xFF
@@ -87,9 +74,9 @@ void Motifs::SaveToFile(const string &filename) const {
   }
 }
 
-void Motifs::AddInputs(const vector<uint8> &inputs) {
+void Motifs::AddInputs(const vector<uint8> &inputs, const size_t &fastforward) {
   vector<uint8> current;
-  for (vector<uint8>::const_iterator it = inputs.begin() + FASTFORWARD;
+  for (vector<uint8>::const_iterator it = inputs.begin() + fastforward;
        it != inputs.end(); it++) {
     current.push_back(*it);
     if (current.size() == MOTIF_SIZE) {

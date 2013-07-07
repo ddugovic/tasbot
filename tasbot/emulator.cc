@@ -1,22 +1,6 @@
 
 #include "emulator.h"
 
-#include <algorithm>
-#include <string>
-#include <vector>
-#include <zlib.h>
-#ifdef __GNUC__
-#include <tr1/unordered_map>
-using tr1::unordered_map;
-#else
-#include <unordered_map>
-#endif
-
-#include "config.h"
-
-#include "tasbot.h"
-#include "../cc-lib/city/city.h"
-
 // Joystick data. I think used for both controller 0 and 1. Part of
 // the "API".
 static uint32 joydata = 0;
@@ -47,6 +31,7 @@ struct StateCache {
     }
   };
 
+  // TODO: Utilize standard hash type?
   typedef unordered_map<Key, Value, HashFunction, KeyEquals> Hash;
 
   StateCache() : limit(0ULL), count(0ULL), next_sequence(0ULL), 
@@ -234,7 +219,7 @@ void Emulator::Shutdown() {
   CloseGame();
 }
 
-bool Emulator::Initialize(const string &romfile) {
+bool Emulator::Initialize(Config &config) {
   if (initialized) {
     fprintf(stderr, "Already initialized.\n");
     abort();
@@ -248,12 +233,6 @@ bool Emulator::Initialize(const string &romfile) {
   fprintf(stderr, "Starting " FCEU_NAME_AND_VERSION "...\n");
 
   // (Here's where SDL was initialized.)
-
-  // Initialize the configuration system
-  InitConfig();
-  if (!global_config) {
-    return -1;
-  }
 
   // initialize the infrastructure
   error = FCEUI_Initialize();
@@ -311,6 +290,7 @@ bool Emulator::Initialize(const string &romfile) {
   }
 
   // Load the game.
+  string romfile = config.game+ ".nes";
   if (1 != LoadGame(romfile.c_str())) {
     fprintf(stderr, "Couldn't load [%s]\n", romfile.c_str());
     return false;
@@ -320,6 +300,9 @@ bool Emulator::Initialize(const string &romfile) {
   // Default.
   newppu = 0;
 
+  config.romchecksum = GameInfo->MD5;
+  fprintf(stderr, "Loaded ROM checksum %s\n",
+	  BytesToString(config.romchecksum.data, MD5DATA::size).c_str());
   initialized = true;
   return true;
 }

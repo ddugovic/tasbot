@@ -1,24 +1,6 @@
 /* Searches for solutions to Karate Kid. */
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <string.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "tasbot.h"
-
-#include "fceu/utils/md5.h"
-#include "config.h"
-#include "fceu/driver.h"
-#include "fceu/drivers/common/args.h"
-#include "fceu/state.h"
-#include "basis-util.h"
-#include "emulator.h"
-#include "fceu/fceu.h"
-#include "fceu/types.h"
-#include "simplefm2.h"
 
 /* Represents a node in the state graph.
 
@@ -263,7 +245,7 @@ static uint64 Priority(const Node *n) {
 }
 
 typedef Heap<uint64, Node> GameHeap;
-typedef hash_map<uint64, Node *> GameHash;
+typedef unordered_map<uint64, Node *> GameHash;
 
 // Load the emulator state for this node.
 static void LoadNode(const Node *n) {
@@ -281,7 +263,7 @@ static void LoadNode(const Node *n) {
   }
 }
 
-static void WriteMovie(const string &moviename,
+static void WriteMovie(const string &moviename, Config config,
                        const vector<uint8> &start_inputs, Node *winstate) {
   // Copy base inputs.
   vector<uint8> inputs = start_inputs;
@@ -297,27 +279,9 @@ static void WriteMovie(const string &moviename,
     inputs.push_back(rev[i]);
 
   SimpleFM2::WriteInputs(moviename + ".fm2", "karate.nes",
-                         "base64:6xX0UBv8pLORyg1PCzbWcA==",
+                         config,
                          inputs);
   fprintf(stderr, "Wrote movie!\n");
-}
-
-template<class T>
-static void Shuffle(vector<T> *v) {
-  static uint64 h = 0xCAFEBABEDEADBEEFULL;
-  for (int i = 0; i < v->size(); i++) {
-    h *= 31337;
-    h ^= 0xFEEDFACE;
-    h = (h >> 17) | (h << (64 - 17));
-    h -= 911911911911;
-    h *= 65537;
-    h ^= 0x3141592653589ULL;
-
-    int j = h % v->size();
-    if (i != j) {
-      swap((*v)[i], (*v)[j]);
-    }
-  }
 }
 
 /**
@@ -326,9 +290,13 @@ static void Shuffle(vector<T> *v) {
 int main(int argc, char *argv[]) {
   fprintf(stderr, "Nodes are %ld bytes\n", sizeof(Node));
 
-  Emulator::Initialize("karate.nes");
+  Config config;
+  config.game = "karate.nes";
+  config.movie = "karate.fm2";
+  config.fastforward = 0;
+  Emulator::Initialize(config);
 
-  vector<uint8> start_inputs = SimpleFM2::ReadInputs("karate.fm2");
+  vector<uint8> start_inputs = SimpleFM2::ReadInputs(config.movie);
   basis = new vector<uint8>;
   *basis = BasisUtil::LoadOrComputeBasis(start_inputs, 140, "karate.basis");
 
@@ -352,7 +320,7 @@ int main(int argc, char *argv[]) {
   GameHeap queue;
   fprintf(stderr, "Created heap\n");
   uint64 p = Priority(start);
-  fprintf(stderr, "priority %lx\n", p);
+  fprintf(stderr, "priority %llx\n", p);
   queue.Insert(p, start);
 
   uint64 bad_nodes = 0;
@@ -375,7 +343,7 @@ int main(int argc, char *argv[]) {
     processed++;
     if (processed % 1000 == 0) {
       // XXX report deepest?
-      fprintf(stderr, "%lu bad %lu queue %lu dist %d (re %lu ob %lu sow %lu)\n",
+      fprintf(stderr, "%llu bad %llu queue %d dist %d (re %llu ob %llu sow %llu)\n",
               processed, bad_nodes, queue.Size(), explore->distance,
               rediscovered, rediscovered_obsolete,
               rediscovered_same_or_worse);
@@ -384,15 +352,15 @@ int main(int argc, char *argv[]) {
 
     if (processed % 50000 == 0) {
       char name[512];
-      sprintf(name, "prog%lu-%d", processed, explore->distance);
-      WriteMovie(name, start_inputs, explore);
+      sprintf(name, "prog%llu-%d", processed, explore->distance);
+      WriteMovie(name, config, start_inputs, explore);
     }
 
     if (explore->distance > deepest) {
       deepest = explore->distance;
       fprintf(stderr, "New deepest: %d heu %x\n", deepest, explore->heuristic);
       if (deepest > 12 && (processed - wrotelastdeepest) < 100) {
-        WriteMovie("deepest", start_inputs, explore);
+        WriteMovie("deepest", config, start_inputs, explore);
         wrotelastdeepest = processed;
       }
     }
@@ -403,7 +371,7 @@ int main(int argc, char *argv[]) {
               explore->distance,
               explore->heuristic);
       if (heuristicest > 0xfa007d /* && (processed - wrotelastheuristic) < 100 */) {
-        WriteMovie("heuristicest", start_inputs, explore);
+        WriteMovie("heuristicest", config, start_inputs, explore);
         wrotelastheuristic = processed;
       }
     }
@@ -437,7 +405,7 @@ int main(int argc, char *argv[]) {
       // Did we win?
       if (IsWon()) {
         Node *now = MakeNode(explore, input);
-        WriteMovie("winning", start_inputs, now);
+        WriteMovie("winning", config, start_inputs, now);
         return 0;
       } else if (IsBad()) {
         bad_nodes++;

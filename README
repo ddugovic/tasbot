@@ -1,8 +1,6 @@
  Experimental code for automating the play of NES games.
  This directory contains some false starts and the playfun and learnfun
- algorithms, which original author Tom Murphy VII describes here
-
-   http://tom7.org/mario/
+ algorithms, which original author Tom Murphy VII <a href="http://tom7.org/mario/">describes here</a>.
 
  The intended platform is 64-bit GNU/Linux, although mingw-specific
  code is left intact so compiling on Windows should only require
@@ -29,15 +27,14 @@
 
 
  For most of these programs you need to make modifications to the
- source code (e.g. game.h) to set some constants, like what game and
+ script (e.g. playfun.sh) to set some constants, like what game and
  what movie you want to learn:
 
  tasbot   - A*-ish search for solutions to games. Needs a hand-written
             objective function. Very slow.
 
- learnfun - learns a lexicographic ordering of RAM values, as well as
-            capturing input motifs, that can be used to automatically
-            try to play the game (with playfun)
+ learnfun - learns an objective function of RAM values, as well as
+            capturing input motifs that can be played by playfun.
 
  playfun  - plays the game given the output of learnfun. More or less
             works for "easy" games like Super Mario Bros.
@@ -47,36 +44,33 @@
  any customization. The steps are:
 
  - Use FCEUX to record a movie (FM2 format) of you playing the game.
-   I usually do a few thousand frames and I try to keep it simple.
-   See here for an example
+   I usually record a few thousand frames and try to keep it simple.
+   See <a href="http://youtu.be/OS75JLwJExk">this video</a> for an example.
 
-   http://youtu.be/OS75JLwJExk
-
- - Modify game.h to set the name of your movie. You can also define
-   FASTFORWARD to skip any number of frames (copying them from your
+ - Modify playfun.sh to set the name of your movie. You can also set
+   fastforward to skip any number of frames (copying them from your
    movie), like if you want to skip menus. This is obviously cheating
    since learnfun and playfun never learn the menus.
-   Playfun's progress files can be replayed using FCEUX, which checks
-   that BASE64 matches the ROM file checksum or displays a warning.
 
- - Rebuild learnfun and playfun.
-   They compile in the constants in game.h.
-
- - Run ./learnfun to produce an .objectives and .motifs file
+ - Run learnfun to produce an .objectives and .motifs file
    based on your inputs. It also makes some optional SVG files.
 
- - I recommend running playfun in MARIONET (client/server) mode which
+ - Run playfun to produce replayable .fm2 movie files.
+   I recommend running playfun in MARIONET (client/server) mode which
    parallelizes computation to run faster. This means first starting
    a helper for each logical CPU, then starting a single master:
 
-   ./playfun --helper 8000
-   ./playfun --helper 8001
-   ./playfun --helper 8002
-   ./playfun --helper 8003
-   ./playfun --master 8000 8001 8002 8003
+   ARGS="--game mario --movie mario.fm2 --fastforward 200"
+   ./learnfun $ARGS
+   ./playfun --helper 8000 $ARGS &
+   ./playfun --helper 8001 $ARGS &
+   ./playfun --helper 8002 $ARGS &
+   ./playfun --helper 8003 $ARGS &
+   sleep 1
+   ./playfun --master 8000 8001 8002 8003 $ARGS
 
    These all output ANSI colors and escape sequences to draw progress
-   bars, so you will want to run them in different console windows.
+   bars, so you may want to run them in different console windows.
    Note that MARIONET is vulnerable to remote exploitation (it loads
    savestates, assuming they're valid). Don't run it on open networks.
 

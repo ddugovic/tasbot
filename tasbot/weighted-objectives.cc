@@ -1,20 +1,6 @@
 
 #include "weighted-objectives.h"
 
-#include <algorithm>
-#include <cmath>
-#include <set>
-#include <string>
-#include <iostream>
-#include <sstream>
-
-#include "tasbot.h"
-#include "../cc-lib/arcfour.h"
-#include "../cc-lib/textsvg.h"
-#include "util.h"
-
-using namespace std;
-
 struct WeightedObjectives::Info {
   explicit Info(double w) : weight(w) {}
   double weight;

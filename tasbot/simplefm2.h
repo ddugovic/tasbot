@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 
-#include "tasbot.h"
+#include "util.h"
 
 #define INPUT_R (1<<7)
 #define INPUT_L (1<<6)
@@ -26,12 +26,12 @@ struct SimpleFM2 {
 
   static void WriteInputs(const string &outputfile,
                           const string &romfilename,
-                          const MD5DATA &romchecksum,
+                          const Config &config,
                           const vector<uint8> &inputs);
 
   static void WriteInputsWithSubtitles(const string &outputfile,
                                        const string &romfilename,
-                                       const MD5DATA &romchecksum,
+                                       const Config &config,
                                        const vector<uint8> &inputs,
                                        const vector<string> &subtitles);
 

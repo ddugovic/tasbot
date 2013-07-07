@@ -1,11 +1,6 @@
 
 #include "basis-util.h"
 
-#include <stdio.h>
-
-#include "emulator.h"
-#include "../cc-lib/util.h"
-
 vector<uint8> BasisUtil::LoadOrComputeBasis(const vector<uint8> &inputs,
 					      int frame,
 					      const string &basisfile) {

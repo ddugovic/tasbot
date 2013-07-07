@@ -1,37 +1,9 @@
 /* This program attempts to learn an objective function for a
    particular game by watching movies of people playing it. The
-   objective function can then be used by playfun.exe
-   to try to play the game.
+   objective function can then be used by playfun to play the game.
  */
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <string.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <map>
-
-#include "tasbot.h"
-
-#include "fceu/utils/md5.h"
-#include "config.h"
-#include "fceu/driver.h"
-#include "fceu/drivers/common/args.h"
-#include "fceu/state.h"
-#include "emulator.h"
-#include "fceu/fceu.h"
-#include "fceu/types.h"
-#include "simplefm2.h"
-#include "objective.h"
-#include "weighted-objectives.h"
-#include "motifs.h"
-#include "game.h"
-
-#ifdef MARIONET
-#include "SDL.h"
-#endif
-
+#include "learnfun.h"
 
 static void SaveMemory(vector< vector<uint8> > *memories) {
   memories->resize(memories->size() + 1);
@@ -90,7 +62,7 @@ static void GenerateOccasional(int stride, int offsets, int num,
   }
 }
 
-static void MakeObjectives(const vector< vector<uint8> > &memories) {
+static void MakeObjectives(const string &game, const vector< vector<uint8> > &memories) {
   printf("Now generating objectives.\n");
   objectives = new vector< vector<int> >;
   Objective obj(memories);
@@ -136,14 +108,15 @@ static void MakeObjectives(const vector< vector<uint8> > &memories) {
   weighted.WeightByExamples(memories);
   printf("And %zu unique objectives\n", weighted.Size());
 
-  weighted.SaveToFile(GAME ".objectives");
+  weighted.SaveToFile((game+ ".objectives").c_str());
 
-  weighted.SaveSVG(memories, GAME ".svg");
+  weighted.SaveSVG(memories, (game+ ".svg").c_str());
 }
 
 int main(int argc, char *argv[]) {
-  Emulator::Initialize(GAME ".nes");
-  vector<uint8> movie = SimpleFM2::ReadInputs(MOVIE);
+  Config config(argc, argv);
+  Emulator::Initialize(config);
+  vector<uint8> movie = SimpleFM2::ReadInputs(config.movie.c_str());
   CHECK(!movie.empty());
 
   vector< vector<uint8> > memories;
@@ -159,7 +132,7 @@ int main(int argc, char *argv[]) {
     Emulator::Step(movie[start]);
     start++;
   }
-  while (start < FASTFORWARD && start < movie.size()) {
+  while (start < config.fastforward && start < movie.size()) {
     Emulator::Step(movie[start]);
     start++;
   }
@@ -193,10 +166,10 @@ int main(int argc, char *argv[]) {
          memories.size(),
          time_end - time_start);
 
-  MakeObjectives(memories);
+  MakeObjectives(config.game, memories);
   Motifs motifs;
-  motifs.AddInputs(inputs);
-  motifs.SaveToFile(GAME ".motifs");
+  motifs.AddInputs(inputs, config.fastforward);
+  motifs.SaveToFile((config.game+ ".motifs").c_str());
 
   Emulator::Shutdown();
 
