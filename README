@@ -1,6 +1,7 @@
  Experimental code for automating the play of NES games.
  This directory contains some false starts and the playfun and learnfun
- algorithms, which original author Tom Murphy VII <a href="http://tom7.org/mario/">describes here</a>.
+ algorithms, which original author Tom Murphy VII describes here:
+ http://tom7.org/mario/
 
  The intended platform is 64-bit GNU/Linux, although mingw-specific
  code is left intact so compiling on Windows should only require
@@ -45,7 +46,7 @@
 
  - Use FCEUX to record a movie (FM2 format) of you playing the game.
    I usually record a few thousand frames and try to keep it simple.
-   See <a href="http://youtu.be/OS75JLwJExk">this video</a> for an example.
+   See this video for an example: http://youtu.be/OS75JLwJExk
 
  - Modify playfun.sh to set the name of your movie. You can also set
    fastforward to skip any number of frames (copying them from your
